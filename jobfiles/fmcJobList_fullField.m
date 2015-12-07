@@ -10,7 +10,6 @@ DefaultJob.DataRepository = ['~/Documents/School/VT/Research/' ...
 
 % Job options
 DefaultJob.JobOptions.NumberOfProcessors = 1;
-DefaultJob.JobOptions.DataRepositoryIsAbsolute = 1;
 DefaultJob.JobOptions.ImageRotationAngle = 0;
 DefaultJob.JobOptions.SimulateBeam = 0;
 DefaultJob.JobOptions.SimulateNoise = 0;
@@ -23,11 +22,17 @@ DefaultJob.JobOptions.StartPass = 1;
 DefaultJob.JobOptions.RunCompiled = 1;
 
 % Image parameters
+DefaultJob.Parameters.Images.Directory = '.';
 DefaultJob.Parameters.Images.BaseName = 'frame_';
 DefaultJob.Parameters.Images.Extension = '.tif';
 DefaultJob.Parameters.Images.NumberOfDigits = 7;
 DefaultJob.Parameters.Images.CorrelationStep = 1;
 DefaultJob.Parameters.Images.ParticleConcentration = 0.1;
+
+% Output (vector) parameters
+DefaultJob.Parameters.Vectors.Directory = '';
+DefaultJob.Parameters.Vectors.BaseName = '';
+DefaultJob.Parameters.Vectors.NumberOfDigits = 7;
 
 % Set options
 DefaultJob.Parameters.Sets.Start = 1;
