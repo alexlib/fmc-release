@@ -1,4 +1,6 @@
-function [x_grid_rect, y_grid_rect, x_grid_01, y_grid_01, x_grid_02, y_grid_02] = discreteWindowOffset(X_OLD, Y_OLD, U, V, ProcessingParameters) 
+function [x_grid_rect, y_grid_rect, ...
+    x_grid_01, y_grid_01, ...
+    x_grid_02, y_grid_02] = discreteWindowOffset(X_OLD, Y_OLD, U, V, ProcessingParameters) 
 % Inputs: 
 %   XGRID and YGRID are the matrices or vectors of the column and row 
 %   grid points prior to shifting. These Should be in the format of meshgrid.
@@ -19,7 +21,7 @@ function [x_grid_rect, y_grid_rect, x_grid_01, y_grid_01, x_grid_02, y_grid_02] 
 %   
 
 % Specify the DWO differencing scheme (forward, central, or backward)
-DwoMethod = ProcessingParameters.FmcDifferenceMethod;
+dwo_difference_method = ProcessingParameters.DWO.DwoDifferenceMethod;
 
 % Read image dimensions
 imageHeight = ProcessingParameters.Images.Height;
@@ -38,23 +40,25 @@ gridBufferY = max(ProcessingParameters.Grid.Buffer.Y, ceil(regionHeight / 2));
 gridBufferX = max(ProcessingParameters.Grid.Buffer.X, ceil(regionWidth / 2));
 
 % Create the initial rectangular grid
-[x_grid_rect, y_grid_rect] = gridImage([imageHeight, imageWidth], [gridSpacingY gridSpacingX], gridBufferY, gridBufferX);
+[x_grid_rect, y_grid_rect] = ...
+    gridImage([imageHeight, imageWidth], ...
+    [gridSpacingY gridSpacingX], gridBufferY, gridBufferX);
 
 % Interpolate the shift-field onto the input grid. U and V are the
 % non-integer horizontal and vertical displacements by whose rounded values
 % the grid is shifted.
-% "Spline" is the interpolation method and
-% "Linear" is the extrapolation method.
-% We are using griddedInterpolant because interp2 doesn't have a
-% good extrapolation method input (just scalar values). 
-interpolant_U = griddedInterpolant(Y_OLD,X_OLD, U, 'spline','linear');
-interpolant_V = griddedInterpolant(Y_OLD,X_OLD, V, 'spline','linear');
+% The first  "linear" is the interpolation method and
+% The second "linear" is the extrapolation method.
+% We are using scatteredInterpolant because interp2 doesn't have a
+% good extrapolation method input. 
+interpolant_U = scatteredInterpolant(Y_OLD,X_OLD, U, 'linear','linear');
+interpolant_V = scatteredInterpolant(Y_OLD,X_OLD, V, 'linear','linear');
 gridShiftX = interpolant_U(y_grid_rect, x_grid_rect);
 gridShiftY = interpolant_V(y_grid_rect, x_grid_rect);
 
 % Create logical expressions to specify the differencing scheme
-isBackwardDifference = ~isempty(regexpi(DwoMethod, 'ba'));
-isForwardDifference  = ~isempty(regexpi(DwoMethod, 'fo'));
+isBackwardDifference = ~isempty(regexpi(dwo_difference_method, 'ba'));
+isForwardDifference  = ~isempty(regexpi(dwo_difference_method, 'fo'));
 
 % Shift the grid coordinates
 if isBackwardDifference
@@ -111,3 +115,5 @@ y_grid_02((y_grid_02 - floor(regionHeight/2)) < 1) = floor(regionHeight/2);
 y_grid_02((y_grid_02 +  ceil(regionHeight/2)) > imageHeight) = imageHeight - ceil(regionHeight/2);
 
 end
+
+

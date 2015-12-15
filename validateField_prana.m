@@ -1,4 +1,4 @@
-function [UVAL, VVAL, ISOUTLIER] = validateField_prana(X, Y, U, V, UOD_EXPECTED_DIFF)
+function [UVAL, VVAL, ISOUTLIER] = validateField_prana(X, Y, U, V, PARAMETERS)
 % Size of the grid
 [gridHeight, gridWidth] = size(X);
 
@@ -8,26 +8,31 @@ ThreshSwitch = 0;
 UODswitch = 1;
 BootSwitch = 0;
 extraPeakSwitch = 0;
-Uthresh = [-inf inf];
-Vthresh = [-inf inf];
-UODthresh = [3 2];
-UODwinsize = [3 3; 3 3];
 BootPer = 0;
 BootIter = 0;
 BootKMax = 0;
 c = zeros(length(X(:)), 1);
 d = zeros(length(X(:)), 1);
 
+% UOD expected difference
+uod_expected_diff = PARAMETERS.UodExpectedDifference;
+uod_median_threshold = PARAMETERS.UodMedianThreshold;
+uod_window_size = PARAMETERS.UodWindowSize;
+u_threshold = PARAMETERS.UThresh;
+v_threshold = PARAMETERS.VThresh;
+
+% Coordinate flipping to work with the prana validation code
 v = -V;
 y = flipud(Y);
 
-[UvalRaw, VvalRaw, IsOutlierRaw] = VAL(X(:), y(:), U(:), v(:), Eval(:), c(:), d(:),ThreshSwitch,UODswitch,BootSwitch,extraPeakSwitch,...
-                        Uthresh,Vthresh,UODwinsize,UODthresh, UOD_EXPECTED_DIFF, BootPer,BootIter,BootKMax);
-
-
-% % Vector validation
-% [UvalRaw, VvalRaw, RvalRaw, ISOUTLIER] = VAL_2d3c(X(:), Y(:), U(:), V(:), W(:), Eval(:), C(:), D(:), ThreshSwitch,UODswitch,...
-%     BootSwitch, extraPeakSwitch, Uthresh, Vthresh, UODwinsize, UODthresh, BootPer,BootIter,BootKMax);
+[UvalRaw, VvalRaw, IsOutlierRaw] = VAL( ...
+    X(:), y(:), U(:), v(:), ...
+    Eval(:), c(:), d(:),...
+    ThreshSwitch, ...
+    UODswitch,BootSwitch,extraPeakSwitch,...
+    u_threshold,v_threshold, uod_window_size, ...
+    uod_median_threshold, uod_expected_diff, ...
+    BootPer, BootIter, BootKMax);
 
 % Reshape matrices.
 UVAL = flipud(reshape(UvalRaw, [gridHeight, gridWidth]));

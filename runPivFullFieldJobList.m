@@ -1,16 +1,19 @@
-function runFmcFullFieldJobList(JOBLIST)
+function runPivFullFieldJobList(JOBLIST)
+% This function determines which files (images) to correlate
+% and the paths to the corresponding output files to be created, 
+% and then calls the correlation 
 
 % Add compiled code path
 addpath ba_interpolation;
 
 % Determine the number of jobs in the job list.
-nJobs = length(JOBLIST);
+number_of_jobs = length(JOBLIST);
 
 % Determine the best fft algoritm to use. 
 fftw('planner', 'patient');
     
 % Run each job in the job list
-for n = 1 : nJobs
+for n = 1 : number_of_jobs
     
     % Start a timer.
     job_tic = tic;
@@ -42,9 +45,18 @@ for n = 1 : nJobs
     
     % Number of digits in the output file names.
     image_number_of_digits = JobFile.Parameters.Images.NumberOfDigits;
+    
+    % Number of the first image
     start_image = JobFile.Parameters.Images.Start;
+    
+    % Number of the last image
     end_image = JobFile.Parameters.Images.End;
+    
+    % Number of images between subsequent frames (frame_step = 1
+    % skips no frames).
     frame_step = JobFile.Parameters.Images.FrameStep;
+    
+    % Correlation step
     correlation_step = JobFile.Parameters.Images.CorrelationStep;
     
     % File path information for the output vector fields
@@ -60,7 +72,7 @@ for n = 1 : nJobs
     % according to the processing parameters
     % of the first PIV pass.
     if isempty(output_base_name)
-        [image_base_name correlation_method ...
+        output_base_name = [image_base_name correlation_method ...
             '_grid' num2str(gridSpacingX) 'x' ...
             num2str(gridSpacingY) '_region' ...
             num2str(region_height) 'x' ...
@@ -85,65 +97,71 @@ for n = 1 : nJobs
     if ~exist(output_directory, 'dir')
         mkdir(output_directory);
     end
-    
-    
-    % Image sets
-    % (delete)
-%     startSet = JobFile.Parameters.Sets.Start;
-%     endSet   = JobFile.Parameters.Sets.End;
-%     setVector = startSet : endSet;
-%     nSets = length(setVector);
-  
-    % Loop over the sets.
-    for s = 1 : nSets;
-    
+      
     % Strings specifying the number format for the images and output files
     image_number_format  = ['%0' num2str(image_number_of_digits)  '.0f'];
     output_number_format = ['%0' num2str(output_number_of_digits) '.0f'];
     
-% Run the job
-
     % Build a list of image numbers
     firstImageNumbers = start_image : frame_step : end_image;
     secondImageNumbers = firstImageNumbers + correlation_step;
     
-    % Determine the number of images
-    nPairs = length(firstImageNumbers);
-    
-    % Build a list of image file paths
-    for k = 1 : nPairs
-        
-        firstImageFilePaths(k, :) = fullfile(image_directory, [image_base_name num2str(firstImageNumbers(k), image_number_format) image_extension]);
-        secondImageFilePaths(k, :) = fullfile(image_directory, [image_base_name num2str(secondImageNumbers(k), image_number_format) image_extension]);
-        outputFilePath(k, :) = fullfile(output_directory, [output_base_name num2str(firstImageNumbers(k), image_number_format) '_' num2str(secondImageNumbers(k), image_number_format) '.mat']);
-        
-        FilePaths(k).FirstImagePath = firstImageFilePaths(k, :);
-        FilePaths(k).SecondImagePath = secondImageFilePaths(k, :);
-        FilePaths(k).OutputFilePath = outputFilePath(k, :);
-        
-    end
-
+    % Determine the number of pairs that will be correlated
+    number_of_pairs = length(firstImageNumbers);
+   
     % Do the correlations
-    for k = 1 : nPairs
+    for k = 1 : number_of_pairs
         
-        if ~(skipExisting && exist(FilePaths(k).OutputFilePath, 'file'))
-            disp(['Correlating pair ' num2str(k) ' of ' num2str(nPairs)]);
+        % File path to the first image
+        FilePaths.FirstImagePath = fullfile(...
+            image_directory, [image_base_name...
+            num2str(firstImageNumbers(k), image_number_format) ...
+            image_extension]);
+        
+        % File path to the second image
+        FilePaths.SecondImagePath = fullfile(...
+            image_directory, [image_base_name  ...
+            num2str(secondImageNumbers(k), image_number_format) ...
+            image_extension]);
+        
+        % Output file path
+        FilePaths.OutputFilePath = fullfile(...
+            output_directory, ...
+            [output_base_name ...
+            num2str(firstImageNumbers(k), output_number_format) ...
+            '_' num2str(secondImageNumbers(k), ...
+            output_number_format) '.mat']);
+        
+        % This if-statement skips frames for which output data exist
+        % if the "skip existing frames" option is enabled.
+        if ~(skipExisting && exist(FilePaths.OutputFilePath, 'file'))
+            
+            % Display a message
+            disp(['Correlating pair ' num2str(k) ' of ' num2str(number_of_pairs)]);
+            
+            % Start a timer for the correlation pair
             pair_tic = tic;
-            fmcFullField(FilePaths(k), JobFile);
-            disp(['Saved vector field to ' outputFilePath(k, :)]);
+            
+            % Perform the correlations on the image pair.
+            % This is This is the call to the main code!
+            % % % % % % % % % % % % % % % % % % %
+            pivFullField(FilePaths, JobFile);
+             % % % % % % % % % % % % % % % % % % % 
+            
+            % Display messages
+            disp(['Saved vector field to ' FilePaths.OutputFilePath]);
             disp(['Image Pair Time: ' num2str(toc(pair_tic)) ' sec'])
         end
-    end
-   
-    
-    end % End looping over sets   
+        
+    end % end of "for k = 1 : number_of_pairs"
 
+    % Calculate and display the elapsed time for the current job.
     job_toc = toc(job_tic);
     fprintf('Total job time: %d seconds\n', job_toc);
     
-end
+end % end of "for n = 1 : number_of_jobs"
 
 
-end
+end % End of function
 
 
