@@ -69,13 +69,13 @@ if startFromExistingField && exist(FILEPATHS.OutputFilePath, 'file')
     % (starting on pass 1 would just repeat pass 1, which is the same
     % thing as startFromExistingField = 0)
     if JOBFILE.JobOptions.StartPass < 2
-        thisPass = 2;
+        piv_pass_number = 2;
     else
-        thisPass = JOBFILE.JobOptions.StartPass;
+        piv_pass_number = JOBFILE.JobOptions.StartPass;
     end
     
     % This sets a loop counter for the PIV passes.
-    p = thisPass - 1;
+    p = piv_pass_number - 1;
     
     % Create the function variables from the saved data
     % This just entails flipping all the coordinate and 
@@ -95,7 +95,7 @@ if startFromExistingField && exist(FILEPATHS.OutputFilePath, 'file')
 else
     % Initialize the counter for
     % the number of user-specified passes
-    thisPass = 1;
+    piv_pass_number = 1;
     p = 0;
 end
 
@@ -108,10 +108,12 @@ JobFile = JOBFILE;
 
 % Loop over the passes.
 % for p = 1 : numberOfPasses;
-while thisPass <= number_of_passes;
+% thisPass is supposed to be the overall pass number
+% This is confusing... change to something like intra-pass iteration
+while piv_pass_number <= number_of_passes;
     
     % Set this variable which gets saved in the output
-    PASSNUMBER = thisPass;
+%     PASSNUMBER = piv_pass_number;
     
     % Increment the pass counter
     p = p + 1;
@@ -130,6 +132,9 @@ while thisPass <= number_of_passes;
     % Flag for zero-meaning the interrogation regions
     do_zero_mean = JobFile.Parameters.Processing(p).InterrogationRegion.ZeroMeanRegion;
     
+    
+    %%% Here we check whether to do image deformation
+    % p is the pass number
     % Check deformation flag
     if p > 1 && doImageDeformation
         
@@ -393,7 +398,9 @@ while thisPass <= number_of_passes;
     t = tic;
     
     % Do all the correlations for the image.
-    parfor k = 1 : num_regions
+    for k = 1 : num_regions
+        
+        fprintf(1, [num2str(k) ' of ' num2str(num_regions) '\n']);
         
         % Extract the subregions from the subregion stacks.
         subRegion1 = regionMatrix1(:, :, k);
@@ -472,9 +479,9 @@ while thisPass <= number_of_passes;
               ty_shift = interpolant_ty(gy{p}, gx{p});
 
         else
-            % For the first pass, set the shift values to zero.
-            tx_shift = zeros(size(gx{p}));
-            ty_shift = zeros(size(gx{p}));
+             % For the first pass, set the shift values to zero.
+              tx_shift = zeros(size(gx{p}));
+              ty_shift = zeros(size(gx{p}));
         end
         
         % Add the shift values to the measured displacements for deform.
