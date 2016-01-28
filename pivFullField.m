@@ -521,6 +521,41 @@ while piv_pass_number <= number_of_passes;
         vVal{p} = zeros(size(ty_raw{p}));
         isOutlier{p} = zeros(size(tx_raw{p}));     
     end
+    
+    % Read the flag for convergence checking
+    check_for_convergence = ...
+        JobFile.Parameters.Processing(p).CheckConvergence;
+    
+    % Check convergence?
+    % Dummy variables for now
+    if check_for_convergence && p > 1
+        has_converged(p) = check_convergence(u{p}, v{p}, ...
+            u{p-1}, v{p-1}, ...
+            convergence_criterion);
+        
+        if has_converged(p) || num_iterations > max_iterations
+            
+            % Increment the pass number.
+            piv_pass_number = piv_pass_number + 1;
+            
+            % Reset the number of iterations
+            num_iterations = 0;
+        else
+            
+            % Increment the number of iterations performed
+            % during this pass
+            num_iterations = num_iterations + 1;
+            
+            % Update the jobfile
+            JobFile.Parameters.Processing(p + 1 : end + 1) = ...
+                JobFile.Parameters.Processing(p : end);
+        end
+        
+        piv_pass_number = piv_pass_number + 1;
+        has_converged(p) = 0;
+        
+    end
+    
         
 end % End for p = 1 : numberOfPasses  
 
