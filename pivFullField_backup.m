@@ -1,4 +1,3 @@
-
 function pivFullField(FILEPATHS, JOBFILE)
 
 % Check for whether to use compiled codes
@@ -11,10 +10,12 @@ COMPILED = JOBFILE.JobOptions.RunCompiled;
 % Number of PIV passes
 % Take the minimum of the requested number of passes and the number of pass
 % parameter structures specified.
-numberOfPasses = min(JOBFILE.JobOptions.NumberOfPasses, length(JOBFILE.Parameters.Processing));
+number_of_passes = min(JOBFILE.JobOptions.NumberOfPasses, length(JOBFILE.Parameters.Processing));
 
-% Chop the jobfile processing parameters down to the first n passes
-JOBFILE.Parameters.Processing = JOBFILE.Parameters.Processing(1 : numberOfPasses);
+% Truncate the jobfile processing parameters
+% down to the number of passes specified by
+% the variable "numberOfPasses". 
+JOBFILE.Parameters.Processing = JOBFILE.Parameters.Processing(1 : number_of_passes);
 
 % Read in the clean images.
 image1_import = double(imread(FILEPATHS.FirstImagePath));
@@ -24,7 +25,7 @@ image2_import = double(imread(FILEPATHS.SecondImagePath));
 [imageHeight, imageWidth, num_channels] = size(image1_import);
 
 % Extract the channel
-if num_channels > 1
+if num_channels > 1   
     % Make sure the color channel is specified
     if isfield(JOBFILE.Parameters.Images, 'ColorChannel')
         % Read the requested color channel
@@ -37,6 +38,14 @@ if num_channels > 1
         image1_raw = image1_import(:, :, 1);
         image2_raw = image2_import(:, :, 1);
     end
+    
+else  % else (if num_channels > 1)
+    
+    % If there's only one channel
+    % then set "image1_raw" to be the whole image, etc.
+    image1_raw = image1_import;
+    image2_raw = image2_import;
+    
 end
 
 % Check whether to re-start from a previously existing velocity field.
@@ -60,17 +69,18 @@ if startFromExistingField && exist(FILEPATHS.OutputFilePath, 'file')
     % (starting on pass 1 would just repeat pass 1, which is the same
     % thing as startFromExistingField = 0)
     if JOBFILE.JobOptions.StartPass < 2
-        thisPass = 2;
+        piv_pass_number = 2;
     else
-        thisPass = JOBFILE.JobOptions.StartPass;
+        piv_pass_number = JOBFILE.JobOptions.StartPass;
     end
     
     % This sets a loop counter for the PIV passes.
-    p = thisPass - 1;
+    p = piv_pass_number - 1;
     
     % Create the function variables from the saved data
     % This just entails flipping all the coordinate and 
     % displacement data
+    % I'm not sure why all this flipping is done...
     for pass = 1 : length(X)
         gx{pass} = flipud(X{pass});
         gy{pass} = flipud(Y{pass});
@@ -83,8 +93,9 @@ if startFromExistingField && exist(FILEPATHS.OutputFilePath, 'file')
     end
     
 else
-    % Initialize the counter for the number of user-specified passes
-    thisPass = 1;
+    % Initialize the counter for
+    % the number of user-specified passes
+    piv_pass_number = 1;
     p = 0;
 end
 
@@ -92,43 +103,57 @@ end
 FilePaths = FILEPATHS;
 JobFile = JOBFILE;
 
-% Initialize the DWO iteration counter (this is for DWO convergence)
-nDwoIterations = 0;
+% % Initialize the DWO iteration counter (this is for DWO convergence)
+% num_dwo_iterations = 0;
 
 % Loop over the passes.
 % for p = 1 : numberOfPasses;
-while thisPass <= numberOfPasses;
+% thisPass is supposed to be the overall pass number
+% This is confusing... change to something like intra-pass iteration
+while piv_pass_number <= number_of_passes;
     
-    % Increment the pass counter 
+    % Set this variable which gets saved in the output
+%     PASSNUMBER = piv_pass_number;
+    
+    % Increment the pass counter
     p = p + 1;
     
-    % Write the number of the specified pass that's currently executing
-    PASSNUMBER(p) = thisPass;
-    
     % Read deformation flag.
-    doImageDeformation = JobFile.Parameters.Processing(p).Deform.DoImageDeformation;
+    doImageDeformation = JobFile.Parameters. ...
+        Processing(p).Deform.DoImageDeformation;
     
-    % Read smoothing parameters
-    doSmoothing = JobFile.Parameters.Processing(p).Smoothing.DoSmoothing;
+    % Read validation flag
+    doValidation = JobFile.Parameters.Processing(p).Validation.DoValidation;
     
-    % Smoothing kernel diameter
-    smoothingKernelDiameter = JobFile.Parameters.Processing(p).Smoothing.KernelDiameter;
-   
-    % Smoothing kernel gaussian standard deviation  
-    smoothingGaussianStdDev = JobFile.Parameters.Processing(p).Smoothing.KernelGaussianStdDev;
-    
-    % Flag to calculate image disparity
-    % calculateImageDisparity = JobFile.Parameters.Processing(p).DoImageDisparity;
+    % Read smoothing flag
+    doSmoothing = JobFile.Parameters. ...
+        Processing(p).Smoothing.DoSmoothing;
     
     % Flag for zero-meaning the interrogation regions
     do_zero_mean = JobFile.Parameters.Processing(p).InterrogationRegion.ZeroMeanRegion;
     
+    
+    %%% Here we check whether to do image deformation
+    % p is the pass number
     % Check deformation flag
     if p > 1 && doImageDeformation
         
         % Smooth field if specified
         if doSmoothing
+            
+            % Smoothing kernel diameter
+            smoothingKernelDiameter = ...
+                JobFile.Parameters.Processing(p). ...
+                Smoothing.KernelDiameter;
+   
+            % Smoothing kernel gaussian standard deviation  
+            smoothingGaussianStdDev = ...
+                JobFile.Parameters.Processing(p). ...
+                Smoothing.KernelGaussianStdDev;
+    
             % Smooth the velocity field.
+            % Not sure how to deal with this 
+            % growing field size warning in this case.
             source_field_u{p-1} = smoothField(uVal{p-1}, smoothingKernelDiameter, smoothingGaussianStdDev);
             source_field_v{p-1} = smoothField(vVal{p-1}, smoothingKernelDiameter, smoothingGaussianStdDev);
        
@@ -175,11 +200,17 @@ while thisPass <= numberOfPasses;
     end
     
     % Interrogation region dimensions
-    regionHeight = JobFile.Parameters.Processing(p).InterrogationRegion.Height;
-    regionWidth = JobFile.Parameters.Processing(p).InterrogationRegion.Width;    
+    % Region height (pixels)
+    regionHeight = JobFile.Parameters. ...
+        Processing(p).InterrogationRegion.Height;
+    
+    % Region width (pixels)
+    regionWidth  = JobFile.Parameters. ...
+        Processing(p).InterrogationRegion.Width;    
     
     % Fmc difference method
-    fmcDifferenceMethod_string = JobFile.Parameters.Processing(p).FmcDifferenceMethod; 
+    fmcDifferenceMethod_string = JobFile.Parameters. ...
+        Processing(p).FMC.FmcDifferenceMethod; 
     
     % Determine what FMC difference method to use. 
     % fmcDifferenceMethod = 1 is central difference.
@@ -195,19 +226,27 @@ while thisPass <= numberOfPasses;
     end
     
     % Apodization window parameters.
-    spatialWindowFraction = JobFile.Parameters.Processing(p).InterrogationRegion.SpatialWindowFraction;
-    fmiWindowSize = JobFile.Parameters.Processing(p).InterrogationRegion.FMIWindowSize;
-    fmiWindowType = JobFile.Parameters.Processing(p).InterrogationRegion.FMIWindowType;
+    spatialWindowFraction = JobFile.Parameters. ...
+        Processing(p).InterrogationRegion.SpatialWindowFraction;
+    
+    % FMC parameters
+    fmiWindowSize = JobFile.Parameters. ...
+        Processing(p).Correlation.FMC.FMIWindowSize;
+    fmiWindowType = JobFile.Parameters. ...
+        Processing(p).Correlation.FMC.FMIWindowType;
 
+    % Log-polar Image resampling parameters
+    numberOfRings = JobFile.Parameters. ...
+        Processing(p).Correlation.FMC.NumberOfRings;
+    numberOfWedges = JobFile.Parameters. ...
+        Processing(p).Correlation.FMC.NumberOfWedges;
+    
     % FFT Parameters
     fftSize = JobFile.Parameters.Processing(p).FFTSize;
     spectrum_height = fftSize(1);
     spectrum_width  = fftSize(2);
-
-    % Image resampling parameters
-    numberOfRings = JobFile.Parameters.Processing(p).Resampling.NumberOfRings;
-    numberOfWedges = JobFile.Parameters.Processing(p).Resampling.NumberOfWedges;
-    rMin = JobFile.Parameters.Processing(p).Resampling.MinimumRadius;
+    
+    rMin = JobFile.Parameters.Processing(p).Correlation.FMC.MinimumRadius;
     rMax = min(spectrum_height, spectrum_width) / 2 - 1;
 
     % Correlation parameters
@@ -219,11 +258,15 @@ while thisPass <= numberOfPasses;
     isScc = ~isempty(regexpi(correlationMethod, 'scc'));
     
     % RPC diameters
-    spatialRPCDiameter = JobFile.Parameters.Processing(p).Correlation.SpatialRPCDiameter;
-    fmiRpcDiameter = JobFile.Parameters.Processing(p).Correlation.FMCDiameter; 
+    spatialRPCDiameter = JobFile.Parameters. ...
+        Processing(p).Correlation.FMC.SpatialRPCDiameter;
+    fmiRpcDiameter = JobFile.Parameters. ...
+        Processing(p).Correlation.FMC.FMCDiameter; 
 
     % Create the gaussian intensity window to be applied to the the raw image interrogation regions
-    spatialWindow = gaussianWindowFilter_prana([regionHeight, regionWidth], spatialWindowFraction .* [regionHeight, regionWidth]);
+    spatialWindow = gaussianWindowFilter_prana(...
+        [regionHeight, regionWidth], ...
+        spatialWindowFraction .* [regionHeight, regionWidth]);
     
     % Determine the FMI window type.
     isHann1 = ~isempty(regexpi(fmiWindowType, 'hann1'));
@@ -239,10 +282,15 @@ while thisPass <= numberOfPasses;
     % into the numerical peak-fit method identifier expected by the function
     % subpixel.m
     if ~isempty(regexpi(subpixel_peak_fit_method, 'squ'));
+        % Least squares method
          subpixel_peak_fit_method_numerical = 3;
+         % Least squares method
     elseif ~isempty(regexpi(subpixel_peak_fit_method, '3'));
+        
+        % Three-point Gaussian
          subpixel_peak_fit_method_numerical = 1;
     else
+        % Three-point Gaussian
          subpixel_peak_fit_method_numerical = 1;
     end
     
@@ -269,26 +317,17 @@ while thisPass <= numberOfPasses;
     % Do this only once to increase speed (meshgrid is slow).
     [xImage, yImage] = meshgrid(1 : regionWidth, 1 : regionHeight);
 
-    % FFT Spectrum coordinates
-    [xSpectrum, ySpectrum] = meshgrid(1:spectrum_width, 1:spectrum_height);
-
     % Figure out the log polar resampling coordinates.
+    % This is done here to avoid calling "meshgrid" 
+    % for each interrogation region pair, which sould be slow!
     [xLP, yLP] = LogPolarCoordinates([spectrum_height, spectrum_width], numberOfWedges, numberOfRings, rMin, rMax, 2 * pi);
 
-    % Universal Outlier Detection Parameters
-    uodStencilRadius = JobFile.Parameters.Processing(p).Validation.UodStencilRadius;
-    uodThreshold = JobFile.Parameters.Processing(p).Validation.UodThreshold;
-    uodExpectedDifference = JobFile.Parameters.Processing(p).Validation.UodExpectedDifference;
-    
     % Save the image size to the processing field for easy passing around.
     JobFile.Parameters.Processing(p).Images.Height = imageHeight;
     JobFile.Parameters.Processing(p).Images.Width  = imageWidth;
 
     % Flag specifying whether or not to do DWO
-    doDiscreteWindowOffset = JobFile.Parameters.Processing(p).DoDiscreteWindowOffset;
-    
-    % Discrete window offset differencing method
-    dwoDifferenceMethod = JobFile.Parameters.Processing(p).DwoDifferenceMethod;
+    doDiscreteWindowOffset = JobFile.Parameters.Processing(p).DWO.DoDiscreteWindowOffset;
     
     % Grid parameters
     gridSpacingX = JobFile.Parameters.Processing(p).Grid.Spacing.X;
@@ -305,7 +344,11 @@ while thisPass <= numberOfPasses;
     % Round the grid shift values so that grid points are shifted
     % from integer coordinates to integercoordinates
     if p > 1 && doDiscreteWindowOffset
-        [gx{p}, gy{p}, gx_01, gy_01, gx_02, gy_02] = discreteWindowOffset(gx{p-1}, gy{p-1}, uVal{p-1}, vVal{p-1}, JobFile.Parameters.Processing(p));
+        [gx{p}, gy{p}, gx_01, gy_01, gx_02, gy_02] = ...
+            discreteWindowOffset(...
+            gx{p-1}, gy{p-1}, ...
+            uVal{p-1}, vVal{p-1}, ...
+            JobFile.Parameters.Processing(p));
         
     else
          % Generate the list of coordinates that specifies the (X, Y) centers of all of the interrogation regions 
@@ -327,66 +370,37 @@ while thisPass <= numberOfPasses;
     gridShiftY_02 = gy_02 - gy{p};
 
     % Determine the size of the grid (number of grid points)..
-    [numRows, numColumns] = size(gx_01);
+    [num_grid_rows, num_grid_cols] = size(gx_01);
 
     % Determine the number of interrogation regions to be correlated
-    nRegions = numRows * numColumns;
+    num_regions = num_grid_rows * num_grid_cols;
+
+    % Extract the subregions from the first image.
+    regionMatrix1 = extractSubRegions(...
+        image1, [regionHeight, regionWidth], ...
+        gx_01(:), gy_01(:));
     
-    %%%% TEMP
-    grid_x_temp_01{p} = gx_01(:);
-    grid_y_temp_01{p} = gy_01(:);
-
-    grid_x_temp_02{p} = gx_02(:);
-    grid_y_temp_02{p} = gy_02(:);
-
-    % Extract the subregions from each image.
-    regionMatrix1 = extractSubRegions(image1, [regionHeight, regionWidth], gx_01(:), gy_01(:));
-    regionMatrix2 = extractSubRegions(image2, [regionHeight, regionWidth], gx_02(:), gy_02(:));
+    % Extract the subregions from the second image.
+    regionMatrix2 = extractSubRegions(...
+        image2, [regionHeight, regionWidth], ...
+        gx_02(:), gy_02(:));
     
     % Preallocate memory for the vectors to hold the estimates of translation, rotation, and scaling.
-    estimatedTranslationY = zeros(nRegions, 1);
-    estimatedTranslationX = zeros(nRegions, 1);
-    estimatedRotation = zeros(nRegions, 1); 
-    estimatedScaling = ones(nRegions, 1);
-    fmiTranslationY = zeros(nRegions, 1);
-    fmiTranslationX = zeros(nRegions, 1);
-    
-    % % Preallocate memory for disparity
-    % disparity_x_vector = zeros(nRegions, 1);
-    % disparity_y_vector = zeros(nRegions, 1);
-    
-    % % Number of particles identified in each region
-    % % this is for image disparity calculation
-    % nParticles = zeros(nRegions, 1);
-
-    % Initialize FMC peak height ratio vector.
-    fmcPeakRatio = zeros(nRegions, 1);
+    estimatedTranslationY = zeros(num_regions, 1);
+    estimatedTranslationX = zeros(num_regions, 1);
+    estimatedRotation = zeros(num_regions, 1); 
+    estimatedScaling = ones(num_regions, 1);
 
     % Initialize RPC peak height ratio vector.
-    spatialPeakRatio = zeros(nRegions, 1);
-    
-    % height of the primary spatial peaks
-    spatialPeakHeight = zeros(nRegions, 1);
-    
-    % Diameter of primary spatial peaks
-    spatialPeakDiameter = zeros(nRegions, 1);
-    
-    % Peak axis lengths
-    DX = zeros(nRegions, 1);
-    DY = zeros(nRegions, 1);
-    
-    % Orientation angle of the best-fit ellipse to the 
-    % spatial correlation peaks
-    peak_angle = zeros(nRegions, 1);
-    
-    % Eccentricity of the spatial peaks
-    peak_eccentricity = zeros(nRegions, 1);
+    spatialPeakRatio = zeros(num_regions, 1);
     
     % Start a timer
     t = tic;
     
     % Do all the correlations for the image.
-    parfor k = 1 : nRegions
+    for k = 1 : num_regions
+        
+        fprintf(1, [num2str(k) ' of ' num2str(num_regions) '\n']);
         
         % Extract the subregions from the subregion stacks.
         subRegion1 = regionMatrix1(:, :, k);
@@ -403,7 +417,8 @@ while thisPass <= numberOfPasses;
             % Perform the FMC correlation.
             [estimatedTranslationY(k), estimatedTranslationX(k),...
             estimatedRotation(k), estimatedScaling(k), ...
-            fmcPeakRatio(k), spatialPeakRatio(k), spatialPeakHeight(k), spatialPeakDiameter(k)] = ...
+            ~, spatialPeakRatio(k), ...
+            ~, ~] = ...
             ...
             FMC(subRegion1, subRegion2, spatialWindow, imageSpectralFilter,...
             fmiWindow, fmiSpectralFilter, ...
@@ -416,48 +431,37 @@ while thisPass <= numberOfPasses;
         % i.e., use only the primary peak.
         elseif isRpc
             [estimatedTranslationY(k), estimatedTranslationX(k), ...
-                rpcPlane, spatialPeakHeight(k), spatialPeakDiameter(k)]...
+                rpcPlane, ~, ~]...
                 = RPC(...
                 spatialWindow .* subRegion1, ...
                 spatialWindow .* subRegion2,...
                 imageSpectralFilter, subpixel_peak_fit_method_numerical); 
 
             % Measure the peak height ratio
-            if COMPILED
-                spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
-            else
-                spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
-            end
-
+            spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
+          
         % Perform SCC analysis.
         elseif isScc
             [estimatedTranslationY(k), estimatedTranslationX(k), ...
-                sccPlane, spatialPeakHeight(k),...
-                spatialPeakDiameter(k)]...
+                scc_plane]...
                 = SCC(...
                 spatialWindow .* subRegion1, ...
                 spatialWindow .* subRegion2,...
                 subpixel_peak_fit_method_numerical);
+            
+                % Measure the peak height ratio
+                spatialPeakRatio(k) = measurePeakHeightRatio(scc_plane, COMPILED);
         end
-        
-        % % These lines will calculate the disparity between regions.
-        % if calculateImageDisparity
-        %     [DISPARITY_X, DISPARITY_Y] = calculateTransformedRegionDisparity(subRegion1, subRegion2,...
-        %         estimatedTranslationY(k), estimatedTranslationX(k),...
-        %         estimatedRotation(k), estimatedScaling(k), xImage, yImage, 0.95, 2, COMPILED);
-        % end    
+             
     end % end for k = 1 : nRegions
-
-    % Calculate the peak diameter magnitude
-    peak_diameter = reshape(sqrt(DX.^2 + DY.^2), numRows, numColumns);
         
     % Inform the user
     disp(['Correlation times (pass ' num2str(p) '): ' num2str(toc(t)) ' sec' ]);
     disp('');
     
     % Reshape the raw measured displacements into matrices.
-    tx_raw{p} = reshape(estimatedTranslationX, numRows, numColumns);
-    ty_raw{p} = reshape(estimatedTranslationY, numRows, numColumns);
+    tx_raw{p} = reshape(estimatedTranslationX, num_grid_rows, num_grid_cols);
+    ty_raw{p} = reshape(estimatedTranslationY, num_grid_rows, num_grid_cols);
     
     % Shift the measured velocities by the deform or DWO values. 
     if doImageDeformation
@@ -475,9 +479,9 @@ while thisPass <= numberOfPasses;
               ty_shift = interpolant_ty(gy{p}, gx{p});
 
         else
-            % For the first pass, set the shift values to zero.
-            tx_shift = zeros(size(gx{p}));
-            ty_shift = zeros(size(gx{p}));
+             % For the first pass, set the shift values to zero.
+              tx_shift = zeros(size(gx{p}));
+              ty_shift = zeros(size(gx{p}));
         end
         
         % Add the shift values to the measured displacements for deform.
@@ -492,113 +496,66 @@ while thisPass <= numberOfPasses;
     end
     
     % Reshape the rotation and scaling measurements into matrices.
-    ROTATION{p} = reshape(estimatedRotation, numRows, numColumns);
-    SCALING{p} =  reshape(estimatedScaling, numRows, numColumns);
+    ROTATION{p} = reshape(estimatedRotation, num_grid_rows, num_grid_cols);
+    SCALING{p} =  reshape(estimatedScaling, num_grid_rows, num_grid_cols);
 
     % Reshape the peak ratio measurements into matrices.
-    SPATIAL_PEAK_RATIO{p} = flipud(reshape(spatialPeakRatio, numRows, numColumns));
-    FMC_PEAK_RATIO{p} = flipud(reshape(fmcPeakRatio, numRows, numColumns));
-    
-    % % Reshape the disparity vectors into matrices.
-    % DISPARITY_X{p} = flipud(reshape(disparity_x_vector, numRows, numColumns));
-    % DISPARITY_Y{p} = flipud(reshape(disparity_y_vector, numRows, numColumns));
-    % N_PARTICLES{p} = flipud(reshape(nParticles, numRows, numColumns));
+    SPATIAL_PEAK_RATIO{p} = flipud(reshape(spatialPeakRatio, num_grid_rows, num_grid_cols));
 
     % Run Prana's validation code. Note that right now the rotation
     % The previous codes to do this were "universalOutlierDetection.m"
     % and "universalOutlierReplacement.m"
     % estimate isn't validated.
-    [uVal{p}, vVal{p}, isOutlier{p}] = validateField_prana(gx{p}, gy{p}, TRANSLATIONX{p}, TRANSLATIONY{p}, uodExpectedDifference);
+    if doValidation
         
-    % Check for convergence if it's requested. 
-    % If the velocity estimate has converged, go on
-    % to the next user-specified pass. Otherwise, 
-    % repeat the previous pass. 
-    
-    % This determines whether DWO convergence iterations were specified
-    doDwoConvergence = JobFile.Parameters.Processing(p).DwoConverge;
-    
-    % If DWO convergence was specified (and at least one pass has
-    % completed), then check the other parameters regarding DWO convergence
-    if doDwoConvergence
-        % Inform the user
-        disp('Convergence requested. Checking convergence.')
+        % Validation parameters
+        val_parameters = JobFile.Parameters.Processing(p).Validation;
         
-        % Determine the maximum number of iterations specified
-        maxDwoConvergenceIterations = JobFile.Parameters.Processing(p).DwoMaxConvergenceIterations;
-        
-        % Determine the DWO convergence criteria
-        dwoConvergenceCriteria = JobFile.Parameters.Processing(p).DwoConvergenceCriteria;
-        
-        % If at least one DWO iteration has been completed...
-        if nDwoIterations > 0
-            % Determine the 2-norm of the velocity field components compared to
-            % the previous pass. This is the metric against which the
-            % convergence criteria is compared.
-            uNorm(p) = mean(abs(TRANSLATIONX{p}(:) - TRANSLATIONX{p-1}(:)));
-            vNorm(p) = mean(abs(TRANSLATIONY{p}(:) - TRANSLATIONY{p-1}(:)));
-            rNorm(p) = mean(abs(ROTATION{p}(:) - ROTATION{p-1}(:)));
-            
-            % Inform the user
-            disp(['U norm: ' num2str(uNorm(p), '%10.3e') '    V norm: ' num2str(vNorm(p), '%10.3e') '    Criteria: ' num2str(dwoConvergenceCriteria, '%10.3e')]);
-
-            % Check if the convergence criteria have been reached
-            hasConverged(p) = min(uNorm(p) <= dwoConvergenceCriteria , vNorm(p) <= dwoConvergenceCriteria);
-        else
-            % Convergence is never reached before the first DWO iteration.
-            hasConverged(p) = 0;
-        end
-        
-        % If the velocity field has converged or the max number of
-        % iterations has been reached
-        if hasConverged(p)
-           
-            % Inform the user
-            disp(['Pass ' num2str(thisPass) ' converged after ' num2str(nDwoIterations) ' DWO iterations. Incrementing pass.']);
-            
-            % Save the number of iterations
-            dwoIterations(thisPass) = nDwoIterations;
-     
-            % Reset the DWO Iteration counter
-            nDwoIterations = 0;
-            
-            % Increment the counter for the user-specified passes
-            thisPass = thisPass + 1;
-           
-        % Max iterations reached.
-        elseif nDwoIterations > maxDwoConvergenceIterations
-            % Inform the user
-            disp(['Max number of iterations reached for ' num2str(thisPass) '.']);
-            
-            % Save the number of iterations
-            dwoIterations(thisPass) = nDwoIterations;
-     
-            % Reset the DWO Iteration counter
-            nDwoIterations = 0;
-            
-            % Increment the counter for the user-specified passes
-            thisPass = thisPass + 1;
-        
-        % Neither convergence nor max iterations have been reached.    
-        else 
-            
-            % Inform the user
-            disp(['Pass ' num2str(thisPass) ' has not converged after ' num2str(nDwoIterations)  ' DWO iterations. Iterating DWO.']);
-            
-            % Increment the DWO iteration counter
-            nDwoIterations = nDwoIterations + 1; 
-
-            % Update the jobfile with a new pass
-            % Then exit the convergence-checking loop with the updated jobfile
-            JobFile.Parameters.Processing(p + 1 : end + 1) = JobFile.Parameters.Processing(p : end);
-            
-        end
-        
+        % Perform the validation
+        [uVal{p}, vVal{p}, isOutlier{p}] = validateField_prana(...
+        gx{p}, gy{p}, ...
+        TRANSLATIONX{p}, TRANSLATIONY{p}, ...
+        val_parameters);
     else
-        % Increment the counter for the user-specified passes
-        thisPass = thisPass + 1;
-        hasConverged(p) = 0;
+        uVal{p} = zeros(size(tx_raw{p}));
+        vVal{p} = zeros(size(ty_raw{p}));
+        isOutlier{p} = zeros(size(tx_raw{p}));     
     end
+    
+    % Read the flag for convergence checking
+    check_for_convergence = ...
+        JobFile.Parameters.Processing(p).CheckConvergence;
+    
+    % Check convergence?
+    % Dummy variables for now
+    if check_for_convergence && p > 1
+        has_converged(p) = check_convergence(u{p}, v{p}, ...
+            u{p-1}, v{p-1}, ...
+            convergence_criterion);
+        
+        if has_converged(p) || num_iterations > max_iterations
+            
+            % Increment the pass number.
+            piv_pass_number = piv_pass_number + 1;
+            
+            % Reset the number of iterations
+            num_iterations = 0;
+        else
+            
+            % Increment the number of iterations performed
+            % during this pass
+            num_iterations = num_iterations + 1;
+            
+            % Update the jobfile
+            JobFile.Parameters.Processing(p + 1 : end + 1) = ...
+                JobFile.Parameters.Processing(p : end);
+        end
+        
+        piv_pass_number = piv_pass_number + 1;
+        has_converged(p) = 0;
+        
+    end
+    
         
 end % End for p = 1 : numberOfPasses  
 
@@ -627,7 +584,7 @@ end
 CONVERGED = hasConverged;
 
 % Set source field variables to zeros if only one pass was specifed.
-if numberOfPasses < 2
+if number_of_passes < 2
     source_field_u{1} = zeros(size(X{1}));
     source_field_v{1} = zeros(size(X{1}));
 end
@@ -635,8 +592,8 @@ end
 % Save the results
 save(FilePaths.OutputFilePath, ...
     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
-    'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw', 'DISPARITY_X', 'DISPARITY_Y', 'N_PARTICLES',...
-    'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', 'CONVERGED', 'source_field_u', 'source_field_v', ...
+    'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw',...
+    'SPATIAL_PEAK_RATIO', 'PASSNUMBER', 'CONVERGED', ...
     'FilePaths', 'JobFile');
 
 end

@@ -71,7 +71,6 @@ DefaultJob.Parameters.Processing.Correlation.FMC.SpatialRPCDiameter = 2.8;
 
 % RPC spectral filter diameter for the FMC correlation (pixels)
 DefaultJob.Parameters.Processing.Correlation.FMC.FMCDiameter = 3.3; 
-
 DefaultJob.Parameters.Processing.Correlation.FMC.FMCFilterType = 'relative';
 
 % FFT Dimensions.
