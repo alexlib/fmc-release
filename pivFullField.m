@@ -169,7 +169,10 @@ while thisPass <= numberOfPasses;
         YD2 = YI + VI/2;
 
         % Resample the images
+        fprintf('Deforming image 1...\n')
         image1 = sincBlackmanInterp2(image1_raw, XD1 + 0.5, YD1 + 0.5, 8, 'blackman');
+        
+        fprintf('Deforming image 2...\n')
         image2 = sincBlackmanInterp2(image2_raw, XD2 + 0.5, YD2 + 0.5, 8, 'blackman');
         
     else
@@ -638,8 +641,6 @@ for p = 1 : finalNumberOfPasses
     
 end
 
-% Rename variable
-CONVERGED = hasConverged;
 
 % Set source field variables to zeros if only one pass was specifed.
 if numberOfPasses < 2
@@ -648,10 +649,19 @@ if numberOfPasses < 2
 end
 
 % Save the results
+
+% Commented this out for now, for debugging.
+% save(FilePaths.OutputFilePath, ...
+%     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
+%     'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw', 'DISPARITY_X', 'DISPARITY_Y', 'N_PARTICLES',...
+%     'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', 'CONVERGED', 'source_field_u', 'source_field_v', ...
+%     'FilePaths', 'JobFile');
+
 save(FilePaths.OutputFilePath, ...
     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
-    'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw', 'DISPARITY_X', 'DISPARITY_Y', 'N_PARTICLES',...
-    'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', 'CONVERGED', 'source_field_u', 'source_field_v', ...
+    'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw',...
+    'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', ...
+    'hasConverged', 'source_field_u', 'source_field_v', ...
     'FilePaths', 'JobFile');
 
 end
