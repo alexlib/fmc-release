@@ -37,6 +37,11 @@ if num_channels > 1
         image1_raw = image1_import(:, :, 1);
         image2_raw = image2_import(:, :, 1);
     end
+    
+else
+    % Default to taking the first channel if none is specified.
+    image1_raw = image1_import(:, :, 1);
+    image2_raw = image2_import(:, :, 1);
 end
 
 % Check whether to re-start from a previously existing velocity field.
