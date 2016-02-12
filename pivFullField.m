@@ -184,7 +184,7 @@ while thisPass <= numberOfPasses;
     regionWidth = JobFile.Parameters.Processing(p).InterrogationRegion.Width;    
     
     % Fmc difference method
-    fmcDifferenceMethod_string = JobFile.Parameters.Processing(p).FmcDifferenceMethod; 
+    fmcDifferenceMethod_string = JobFile.Parameters.Processing(p).FMC.FmcDifferenceMethod; 
     
     % Determine what FMC difference method to use. 
     % fmcDifferenceMethod = 1 is central difference.
