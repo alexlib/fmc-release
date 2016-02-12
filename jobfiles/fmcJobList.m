@@ -65,13 +65,13 @@ DefaultJob.Parameters.Processing.Correlation.FMC.MinimumRadius = 2;
 DefaultJob.Parameters.Processing.Correlation.FMC.FMIWindowSize = [2, 2, 0];
 DefaultJob.Parameters.Processing.Correlation.FMC.FMIWindowType = 'hann1';
 
-
-% RPC filter diameter for the spatial correlation (pixels)
-DefaultJob.Parameters.Processing.Correlation.FMC.SpatialRPCDiameter = 2.8; 
-
 % RPC spectral filter diameter for the FMC correlation (pixels)
-DefaultJob.Parameters.Processing.Correlation.FMC.FMCDiameter = 3.3; 
+DefaultJob.Parameters.Processing.Correlation.FMC.FilterDiameter = 3.3; 
 DefaultJob.Parameters.Processing.Correlation.FMC.FMCFilterType = 'relative';
+
+% Spatial RPC diameter
+DefaultJob.Parameters.Processing.Correlation.RPC.FilterDiameter = 2.8;
+
 
 % FFT Dimensions.
 % Is this specific to FMC? 

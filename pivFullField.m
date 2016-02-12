@@ -224,8 +224,8 @@ while thisPass <= numberOfPasses;
     isScc = ~isempty(regexpi(correlationMethod, 'scc'));
     
     % RPC diameters
-    spatialRPCDiameter = JobFile.Parameters.Processing(p).Correlation.SpatialRPCDiameter;
-    fmiRpcDiameter = JobFile.Parameters.Processing(p).Correlation.FMCDiameter; 
+    spatialRPCDiameter = JobFile.Parameters.Processing(p).Correlation.RPC.FilterDiameter;
+    fmiRpcDiameter = JobFile.Parameters.Processing(p).Correlation.FMC.FilterDiameter; 
 
     % Create the gaussian intensity window to be applied to the the raw image interrogation regions
     spatialWindow = gaussianWindowFilter_prana([regionHeight, regionWidth], spatialWindowFraction .* [regionHeight, regionWidth]);
