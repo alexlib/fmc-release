@@ -126,7 +126,7 @@ SegmentItem.Parameters.Processing(1) = defaultProcessing;
 
 % Get rid of this
 SegmentItem.Parameters.Processing(1).DwoDifferenceMethod = 'central';
-%
+
 
 SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 32;
 SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 32;
@@ -137,7 +137,7 @@ SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 128;
 SegmentItem.Parameters.Processing(1).DWO.DoDiscreteWindowOffset = 0;
 SegmentItem.Parameters.Processing(1).Deform.DoImageDeformation = 1;
 SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
-SegmentItem.Parameters.Processing(1).Correlation.Method = 'rpc';
+SegmentItem.Parameters.Processing(1).Correlation.Method = 'scc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
 SegmentItem.Parameters.Processing(1).DWO.MaxIterations = 2;
