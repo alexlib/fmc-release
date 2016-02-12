@@ -148,9 +148,13 @@ for n = 1 : number_of_jobs
             pivFullField(FilePaths, JobFile);
              % % % % % % % % % % % % % % % % % % % 
             
-            % Display messages
-            disp(['\nSaved vector field to ' FilePaths.OutputFilePath]);
-            disp(['Image Pair Time: ' num2str(toc(pair_tic), '%0.2f') ' sec'])
+            % Inform the user that the job as completed
+            % and print the path to the saved file.
+            fprintf('\nSaved vector field to %s\n', ...
+                FilePaths.OutputFilePath);
+            
+            % Inform the user of the total time elapsed for the image pair.
+            fprintf('Image Pair Time: %02.f seconds.\n', toc(pair_tic));
         end
         
     end % end of "for k = 1 : number_of_pairs"

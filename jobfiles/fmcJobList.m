@@ -1,11 +1,10 @@
 function JOBLIST = fmcJobList()
 
 % Job options
-DefaultJob.JobOptions.NumberOfProcessors = 1;
-DefaultJob.JobOptions.ImageRotationAngle = 0;
+% DefaultJob.JobOptions.NumberOfProcessors = 1;
+% DefaultJob.JobOptions.ImageRotationAngle = 0;
 DefaultJob.JobOptions.NumberOfPasses = 1;
 DefaultJob.JobOptions.SkipExisting = 0;
-DefaultJob.JobOptions.LeftHanded = 0;
 % DefaultJob.JobOptions.ComparisonType = 'Eulerian';
 DefaultJob.JobOptions.StartFromExistingField = 0;
 DefaultJob.JobOptions.StartPass = 1;
@@ -87,7 +86,7 @@ DefaultJob.Parameters.Processing.FMC.FmcDifferenceMethod = 'forward';
 
 % Iterative method paramters (DWO and deform)
 % Method can be 'deform', 'dwo', or 'none'
-DefaultJob.Parameters.Processing.Iterative.Method = 'deform';
+DefaultJob.Parameters.Processing.Iterative.Method = 'dwo';
 
 % Attempt to converge the iterative method?
 DefaultJob.Parameters.Processing.Iterative.Converge = true;
@@ -144,7 +143,7 @@ SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 64;
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 64;
 SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
-SegmentItem.Parameters.Processing(1).Correlation.Method = 'fmc';
+SegmentItem.Parameters.Processing(1).Correlation.Method = 'scc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
 SegmentItem.Parameters.Processing(1).Iterative.MaxIterations = 2;
