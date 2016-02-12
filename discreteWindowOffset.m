@@ -1,6 +1,7 @@
 function [x_grid_rect, y_grid_rect, ...
     x_grid_01, y_grid_01, ...
-    x_grid_02, y_grid_02] = discreteWindowOffset(X_OLD, Y_OLD, U, V, ProcessingParameters) 
+    x_grid_02, y_grid_02] = ...
+    discreteWindowOffset(X_OLD, Y_OLD, U, V, ProcessingParameters) 
 % Inputs: 
 %   XGRID and YGRID are the matrices or vectors of the column and row 
 %   grid points prior to shifting. These Should be in the format of meshgrid.
@@ -19,9 +20,6 @@ function [x_grid_rect, y_grid_rect, ...
 %   X_GRID_02 and Y_GRID_02 are the shifted grids for the second image in
 %   the pair.
 %   
-
-% Specify the DWO differencing scheme (forward, central, or backward)
-dwo_difference_method = ProcessingParameters.DWO.DwoDifferenceMethod;
 
 % Read image dimensions
 imageHeight = ProcessingParameters.Images.Height;
@@ -52,49 +50,15 @@ interpolant_V = scatteredInterpolant(Y_OLD,X_OLD, V, 'linear','linear');
 gridShiftX = interpolant_U(y_grid_rect, x_grid_rect);
 gridShiftY = interpolant_V(y_grid_rect, x_grid_rect);
 
-% Create logical expressions to specify the differencing scheme
-isBackwardDifference = ~isempty(regexpi(dwo_difference_method, 'ba'));
-isForwardDifference  = ~isempty(regexpi(dwo_difference_method, 'fo'));
+% Shift the grid points from the first image by -1/2 times the input
+% displacement field.
+x_grid_01 = x_grid_rect - round(1/2 * gridShiftX);
+y_grid_01 = y_grid_rect - round(1/2 * gridShiftY);
 
-% Shift the grid coordinates
-if isBackwardDifference
-    % In case of backward differencing...
-    
-    % Shift the grid points from the first image by the negative
-    % of the displacement field
-    x_grid_01 = x_grid_rect -1 * round(gridShiftX);
-    y_grid_01 = y_grid_rect -1 * round(gridShiftY);
-
-    % Keep the original grid points from the second image.
-    x_grid_02 = x_grid_rect;
-    y_grid_02 = y_grid_rect;
-    
-elseif isForwardDifference
-    % In case of forward differencing...
-    
-    % Keep the original grid points from the first image.
-    x_grid_01 = x_grid_rect;
-    y_grid_01 = y_grid_rect;
-    
-    % Shift the grid points from the second image by the input displacement
-    % field.
-    x_grid_02 = x_grid_rect + round(gridShiftX);
-    y_grid_02 = y_grid_rect + round(gridShiftY);
-    
-else
-    % In (default) case of central differencing... 
-    
-    % Shift the grid points from the first image by -1/2 times the input
-    % displacement field.
-    x_grid_01 = x_grid_rect - round(1/2 * gridShiftX);
-    y_grid_01 = y_grid_rect - round(1/2 * gridShiftY);
-    
-    % Shift the grid points from the second image by +1/2 times the input
-    % displacement field
-    x_grid_02 = x_grid_rect + round(1/2 * gridShiftX);
-    y_grid_02 = y_grid_rect + round(1/2 * gridShiftY);
-
-end
+% Shift the grid points from the second image by +1/2 times the input
+% displacement field
+x_grid_02 = x_grid_rect + round(1/2 * gridShiftX);
+y_grid_02 = y_grid_rect + round(1/2 * gridShiftY);
 
 
 end

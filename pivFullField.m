@@ -11,10 +11,10 @@ COMPILED = JOBFILE.JobOptions.RunCompiled;
 % Number of PIV passes
 % Take the minimum of the requested number of passes and the number of pass
 % parameter structures specified.
-numberOfPasses = min(JOBFILE.JobOptions.NumberOfPasses, length(JOBFILE.Parameters.Processing));
+number_of_passes = min(JOBFILE.JobOptions.NumberOfPasses, length(JOBFILE.Parameters.Processing));
 
 % Chop the jobfile processing parameters down to the first n passes
-JOBFILE.Parameters.Processing = JOBFILE.Parameters.Processing(1 : numberOfPasses);
+JOBFILE.Parameters.Processing = JOBFILE.Parameters.Processing(1 : number_of_passes);
 
 % Read in the clean images.
 image1_import = double(imread(FILEPATHS.FirstImagePath));
@@ -97,21 +97,19 @@ end
 FilePaths = FILEPATHS;
 JobFile = JOBFILE;
 
-% Initialize the DWO iteration counter (this is for DWO convergence)
-nDwoIterations = 0;
+% Initialize the iteration counter 
+% (this is for DWO and deform convergence)
+num_iterations = 0;
 
 % Loop over the passes.
 % for p = 1 : numberOfPasses;
-while thisPass <= numberOfPasses;
+while thisPass <= number_of_passes;
     
     % Increment the pass counter 
     p = p + 1;
     
     % Write the number of the specified pass that's currently executing
     PASSNUMBER(p) = thisPass;
-    
-    % Read deformation flag.
-    doImageDeformation = JobFile.Parameters.Processing(p).Deform.DoImageDeformation;
     
     % Read smoothing parameters
     doSmoothing = JobFile.Parameters.Processing(p).Smoothing.DoSmoothing;
@@ -239,12 +237,9 @@ while thisPass <= numberOfPasses;
     JobFile.Parameters.Processing(p).Images.Height = imageHeight;
     JobFile.Parameters.Processing(p).Images.Width  = imageWidth;
 
-    % Flag specifying whether or not to do DWO
-    doDiscreteWindowOffset = JobFile.Parameters.Processing(p).DWO.DoDiscreteWindowOffset;
-    
-    % Discrete window offset differencing method
-    dwoDifferenceMethod = JobFile.Parameters.Processing(p).DWO.DwoDifferenceMethod;
-    
+%     % Discrete window offset differencing method
+%     dwoDifferenceMethod = JobFile.Parameters.Processing(p).DWO.DwoDifferenceMethod;
+%     
     % Grid parameters
     gridSpacingX = JobFile.Parameters.Processing(p).Grid.Spacing.X;
     gridSpacingY = JobFile.Parameters.Processing(p).Grid.Spacing.Y;
@@ -253,7 +248,20 @@ while thisPass <= numberOfPasses;
     gridBufferY = JobFile.Parameters.Processing(p).Grid.Buffer.Y;
     gridBufferX = JobFile.Parameters.Processing(p).Grid.Buffer.X;
 
+    % Iterative method
+    iterative_method = JobFile.Parameters.Processing(p).Iterative.Method;
     
+    % Check what iterative method is requested (if any)
+    if regexpi(iterative_method, 'def')
+        doImageDeformation = true;
+        doDiscreteWindowOffset = false;
+    elseif regexpi(iterative_method, 'dwo')
+        doImageDeformation = false;
+        doDiscreteWindowOffset = true;
+    else
+        doImageDeformation = false;
+        doDiscreteWIndowOffset = false;
+    end
     
     % Smooth the field if requested. 
     if p > 1
@@ -404,9 +412,9 @@ while thisPass <= numberOfPasses;
     t = tic;
     
     % Do all the correlations for the image.
-    for k = 1 : nRegions
+    parfor k = 1 : nRegions
         
-        fprintf(1, 'On region %d of %d\n', k, nRegions);
+%         fprintf(1, 'On region %d of %d\n', k, nRegions);
         
         % Extract the subregions from the subregion stacks.
         subRegion1 = regionMatrix1(:, :, k);
@@ -543,22 +551,24 @@ while thisPass <= numberOfPasses;
     % repeat the previous pass. 
     
     % This determines whether DWO convergence iterations were specified
-    doDwoConvergence = JobFile.Parameters.Processing(p).DWO.Converge;
+    converge_iterative_method = JobFile.Parameters.Processing(p).Iterative.Converge;
     
     % If DWO convergence was specified (and at least one pass has
-    % completed), then check the other parameters regarding DWO convergence
-    if doDwoConvergence
+    % completed), then check the other parameters regarding convergence
+    if converge_iterative_method
         % Inform the user
         disp('Convergence requested. Checking convergence.')
         
         % Determine the maximum number of iterations specified
-        maxDwoConvergenceIterations = JobFile.Parameters.Processing(p).DWO.MaxIterations;
+        max_iterations = ...
+            JobFile.Parameters.Processing(p).Iterative.MaxIterations;
         
-        % Determine the DWO convergence criteria
-        dwoConvergenceCriteria = JobFile.Parameters.Processing(p).DWO.ConvergenceCriterion;
+        % Determine the iterative method convergence criteria
+        convergence_criterion = ...
+            JobFile.Parameters.Processing(p).Iterative.ConvergenceCriterion;
         
-        % If at least one DWO iteration has been completed...
-        if nDwoIterations > 0
+        % If at least one iteration has been completed...
+        if num_iterations > 0
             % Determine the 2-norm of the velocity field components compared to
             % the previous pass. This is the metric against which the
             % convergence criteria is compared.
@@ -567,53 +577,71 @@ while thisPass <= numberOfPasses;
             rNorm(p) = mean(abs(ROTATION{p}(:) - ROTATION{p-1}(:)));
             
             % Inform the user
-            disp(['U norm: ' num2str(uNorm(p), '%10.3e') '    V norm: ' num2str(vNorm(p), '%10.3e') '    Criteria: ' num2str(dwoConvergenceCriteria, '%10.3e')]);
+            disp(...
+                ['U norm: ' num2str(uNorm(p),...
+                '%10.3e') '    V norm: ' ...
+                num2str(vNorm(p), '%10.3e') '    Criteria: '...
+                num2str(convergence_criterion, '%10.3e')]);
 
             % Check if the convergence criteria have been reached
-            hasConverged(p) = min(uNorm(p) <= dwoConvergenceCriteria , vNorm(p) <= dwoConvergenceCriteria);
+            hasConverged(p) = ...
+                min(uNorm(p) <= convergence_criterion , ...
+                vNorm(p) <= convergence_criterion);
         else
-            % Convergence is never reached before the first DWO iteration.
+            % Convergence is never reached before the first iteration.
             hasConverged(p) = 0;
         end
         
-        % If the velocity field has converged or the max number of
-        % iterations has been reached
+        % If the velocity field has converged or
+        % the max number of iterations has been reached
         if hasConverged(p)
            
-            % Inform the user
-            disp(['Pass ' num2str(thisPass) ' converged after ' num2str(nDwoIterations) ' DWO iterations. Incrementing pass.']);
+            % Inform the user that the pass converged
+            fprintf('Pass %d converged after %d iterations of %s.\n',...
+                thisPass, num_iterations, iterative_method)
             
             % Save the number of iterations
-            dwoIterations(thisPass) = nDwoIterations;
+            iterations(thisPass) = num_iterations;
      
-            % Reset the DWO Iteration counter
-            nDwoIterations = 0;
+            % Reset the Iteration counter
+            num_iterations = 0;
             
             % Increment the counter for the user-specified passes
             thisPass = thisPass + 1;
+            
+            % Inform the user that the pass will now increment.
+            if thisPass < number_of_passes
+                fprintf('Incrementing pass.\n\n');
+            else
+                fprintf('\n');
+            end
            
         % Max iterations reached.
-        elseif nDwoIterations > maxDwoConvergenceIterations
-            % Inform the user
-            disp(['Max number of iterations reached for pass ' num2str(thisPass) '.']);
+        elseif num_iterations > max_iterations
+            % Inform the user that the max number of iterations was reached
+            fprintf(...
+                'Max number of iterations reached for pass %d.\n', thisPass);
             
             % Save the number of iterations
-            dwoIterations(thisPass) = nDwoIterations;
+            iterations(thisPass) = num_iterations;
      
-            % Reset the DWO Iteration counter
-            nDwoIterations = 0;
+            % Reset the Iteration counter
+            num_iterations = 0;
             
             % Increment the counter for the user-specified passes
             thisPass = thisPass + 1;
         
         % Neither convergence nor max iterations have been reached.    
-        else 
+        else
             
             % Inform the user
-            disp(['Pass ' num2str(thisPass) ' has not converged after ' num2str(nDwoIterations)  ' DWO iterations. Iterating DWO.']);
-            
-            % Increment the DWO iteration counter
-            nDwoIterations = nDwoIterations + 1; 
+            fprintf(...
+                'Pass %d has not converged after %d iterations of %s.\n', ...
+                thisPass, num_iterations, iterative_method);
+            fprintf(1, 'Iterating %s...\n\n', iterative_method);
+
+            % Increment the iteration counter
+            num_iterations = num_iterations + 1; 
 
             % Update the jobfile with a new pass
             % Then exit the convergence-checking loop with the updated jobfile
@@ -650,22 +678,7 @@ for p = 1 : finalNumberOfPasses
     
 end
 
-
-% Set source field variables to zeros if only one pass was specifed.
-if numberOfPasses < 2
-    source_field_u{1} = zeros(size(X{1}));
-    source_field_v{1} = zeros(size(X{1}));
-end
-
-% Save the results
-
-% Commented this out for now, for debugging.
-% save(FilePaths.OutputFilePath, ...
-%     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
-%     'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw', 'DISPARITY_X', 'DISPARITY_Y', 'N_PARTICLES',...
-%     'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', 'CONVERGED', 'source_field_u', 'source_field_v', ...
-%     'FilePaths', 'JobFile');
-
+% Save the results to file.
 save(FilePaths.OutputFilePath, ...
     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
     'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw',...

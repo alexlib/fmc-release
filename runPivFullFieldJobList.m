@@ -149,7 +149,7 @@ for n = 1 : number_of_jobs
              % % % % % % % % % % % % % % % % % % % 
             
             % Display messages
-            disp(['Saved vector field to ' FilePaths.OutputFilePath]);
+            disp(['\nSaved vector field to ' FilePaths.OutputFilePath]);
             disp(['Image Pair Time: ' num2str(toc(pair_tic), '%0.2f') ' sec'])
         end
         

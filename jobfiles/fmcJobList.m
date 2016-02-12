@@ -83,17 +83,30 @@ DefaultJob.Parameters.Processing.MultiPeak = 0;
 % Get rid of this?
 DefaultJob.Parameters.Processing.FMC.FmcDifferenceMethod = 'forward';
 
-% Discrete window offset parameters
-DefaultJob.Parameters.Processing.DWO.DoDiscreteWindowOffset = false;
-DefaultJob.Parameters.Processing.DWO.DwoDifferenceMethod = 'central';
-DefaultJob.Parameters.Processing.DWO.ConvergenceCriterion = 0.01;
-DefaultJob.Parameters.Processing.DWO.MaxIterations = 4;
-DefaultJob.Parameters.Processing.DWO.Converge = true;
+%%%%%%%%% 
 
-% Image deformation parameters
-DefaultJob.Parameters.Processing.Deform.DoImageDeformation = 0;
-DefaultJob.Parameters.Processing.Deform.MaxIterations = 4;
-DefaultJob.Parameters.Processing.Deform.ConvergenceCriterion = 0.01;
+% Iterative method paramters (DWO and deform)
+% Method can be 'deform', 'dwo', or 'none'
+DefaultJob.Parameters.Processing.Iterative.Method = 'deform';
+
+% Attempt to converge the iterative method?
+DefaultJob.Parameters.Processing.Iterative.Converge = true;
+
+% Maximum number of iterations to use for the pass.
+DefaultJob.Parameters.Processing.Iterative.MaxIterations = 4;
+
+% Convergence criterion for the pass' iterative method
+% (average change in both components of the vector magnitude
+% between iterations)
+DefaultJob.Parameters.Processing.Iterative.ConvergenceCriterion = 0.01;
+
+
+%%%%%%%%%%%%
+
+% % Image deformation parameters
+% DefaultJob.Parameters.Processing.Iterative.Deform.DoImageDeformation = 0;
+% DefaultJob.Parameters.Processing.Iterative.Deform.MaxIterations = 4;
+% DefaultJob.Parameters.Processing.Iterative.Deform.ConvergenceCriterion = 0.01;
 
 % Smoothing parameters
 DefaultJob.Parameters.Processing.Smoothing.DoSmoothing = 0;
@@ -116,7 +129,7 @@ defaultProcessing = DefaultJob.Parameters.Processing;
 % Job 1, Pass 1
 SegmentItem = DefaultJob;
 SegmentItem.Parameters.Images.CorrelationStep = 3;
-SegmentItem.JobOptions.NumberOfPasses = 2;
+SegmentItem.JobOptions.NumberOfPasses = 1;
 
 SegmentItem.JobOptions.StartFromExistingField = 0;
 SegmentItem.JobOptions.StartPass = 1;
@@ -124,29 +137,23 @@ SegmentItem.JobOptions.StartPass = 1;
 % Pass 1
 SegmentItem.Parameters.Processing(1) = defaultProcessing;
 
-% Get rid of this
-SegmentItem.Parameters.Processing(1).DwoDifferenceMethod = 'central';
-
-SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 32;
-SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 32;
+SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 16;
+SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 16;
 SegmentItem.Parameters.Processing(1).Grid.Buffer.Y = [0, 0];
 SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
-SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 128;
-SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 128;
-SegmentItem.Parameters.Processing(1).DWO.DoDiscreteWindowOffset = 1;
-SegmentItem.Parameters.Processing(1).Deform.DoImageDeformation = 0;
+SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 64;
+SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 64;
 SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
-SegmentItem.Parameters.Processing(1).Correlation.Method = 'scc';
+SegmentItem.Parameters.Processing(1).Correlation.Method = 'fmc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
-SegmentItem.Parameters.Processing(1).DWO.MaxIterations = 2;
+SegmentItem.Parameters.Processing(1).Iterative.MaxIterations = 2;
 
 SegmentItem.Parameters.Processing(2) = SegmentItem.Parameters.Processing(1);
 SegmentItem.Parameters.Processing(2).Grid.Spacing.X = 16;
 SegmentItem.Parameters.Processing(2).Grid.Spacing.Y = 16;
 SegmentItem.Parameters.Processing(2).InterrogationRegion.Height = 64;
 SegmentItem.Parameters.Processing(2).InterrogationRegion.Width = 64;
-SegmentItem.Parameters.Processing(2).DWO.MaxIterations = 2;
 
 
 % Add to job list
