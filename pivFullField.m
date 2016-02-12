@@ -395,7 +395,7 @@ while thisPass <= numberOfPasses;
     t = tic;
     
     % Do all the correlations for the image.
-    for k = 1 : nRegions
+    parfor k = 1 : nRegions
         
         fprintf(1, 'On region %d of %d\n', k, nRegions);
         
@@ -586,7 +586,7 @@ while thisPass <= numberOfPasses;
         % Max iterations reached.
         elseif nDwoIterations > maxDwoConvergenceIterations
             % Inform the user
-            disp(['Max number of iterations reached for ' num2str(thisPass) '.']);
+            disp(['Max number of iterations reached for pass ' num2str(thisPass) '.']);
             
             % Save the number of iterations
             dwoIterations(thisPass) = nDwoIterations;

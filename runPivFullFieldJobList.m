@@ -150,14 +150,14 @@ for n = 1 : number_of_jobs
             
             % Display messages
             disp(['Saved vector field to ' FilePaths.OutputFilePath]);
-            disp(['Image Pair Time: ' num2str(toc(pair_tic)) ' sec'])
+            disp(['Image Pair Time: ' num2str(toc(pair_tic), '%0.2f') ' sec'])
         end
         
     end % end of "for k = 1 : number_of_pairs"
 
     % Calculate and display the elapsed time for the current job.
     job_toc = toc(job_tic);
-    fprintf('Total job time: %d seconds\n', job_toc);
+    fprintf('Total job time: %0.2f seconds\n', job_toc);
     
 end % end of "for n = 1 : number_of_jobs"
 

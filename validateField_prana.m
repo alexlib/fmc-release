@@ -35,9 +35,9 @@ y = Y;
     BootPer, BootIter, BootKMax);
 
 % Reshape matrices.
-UVAL = flipud(reshape(UvalRaw, [gridHeight, gridWidth]));
-VVAL = flipud(reshape(VvalRaw, [gridHeight, gridWidth]));
-ISOUTLIER = flipud(reshape(IsOutlierRaw, [gridHeight, gridWidth]));
+UVAL = (reshape(UvalRaw, [gridHeight, gridWidth]));
+VVAL = (reshape(VvalRaw, [gridHeight, gridWidth]));
+ISOUTLIER = (reshape(IsOutlierRaw, [gridHeight, gridWidth]));
    
 end
 

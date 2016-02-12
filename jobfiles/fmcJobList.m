@@ -16,7 +16,7 @@ DefaultJob.Parameters.Images.Directory = '~/Desktop/piv_images/raw';
 DefaultJob.Parameters.Images.BaseName = 'lambvortex_h1024_w1024_';
 DefaultJob.Parameters.Images.Extension = '.tiff';
 DefaultJob.Parameters.Images.NumberOfDigits = 6;
-DefaultJob.Parameters.Images.CorrelationStep = 1;
+DefaultJob.Parameters.Images.CorrelationStep = 3;
 
 % Stard and end images
 DefaultJob.Parameters.Images.Start = 1;
@@ -87,7 +87,7 @@ DefaultJob.Parameters.Processing.FMC.FmcDifferenceMethod = 'forward';
 DefaultJob.Parameters.Processing.DWO.DoDiscreteWindowOffset = false;
 DefaultJob.Parameters.Processing.DWO.DwoDifferenceMethod = 'central';
 DefaultJob.Parameters.Processing.DWO.ConvergenceCriterion = 0.01;
-DefaultJob.Parameters.Processing.DWO.MaxIterations = 1;
+DefaultJob.Parameters.Processing.DWO.MaxIterations = 4;
 DefaultJob.Parameters.Processing.DWO.Converge = true;
 
 % Image deformation parameters
@@ -113,12 +113,10 @@ DefaultJob.Parameters.Processing.Validation.VThresh = [-inf, inf];
 % Default Processing parameters
 defaultProcessing = DefaultJob.Parameters.Processing;
 
-
-
 % Job 1, Pass 1
 SegmentItem = DefaultJob;
-SegmentItem.Parameters.Images.CorrelationStep = 1;
-SegmentItem.JobOptions.NumberOfPasses = 1;
+SegmentItem.Parameters.Images.CorrelationStep = 3;
+SegmentItem.JobOptions.NumberOfPasses = 2;
 
 SegmentItem.JobOptions.StartFromExistingField = 0;
 SegmentItem.JobOptions.StartPass = 1;
@@ -142,8 +140,15 @@ SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
 SegmentItem.Parameters.Processing(1).Correlation.Method = 'rpc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
+SegmentItem.Parameters.Processing(1).DWO.MaxIterations = 2;
 
 SegmentItem.Parameters.Processing(2) = SegmentItem.Parameters.Processing(1);
+SegmentItem.Parameters.Processing(2).Grid.Spacing.X = 16;
+SegmentItem.Parameters.Processing(2).Grid.Spacing.Y = 16;
+SegmentItem.Parameters.Processing(2).InterrogationRegion.Height = 64;
+SegmentItem.Parameters.Processing(2).InterrogationRegion.Width = 64;
+SegmentItem.Parameters.Processing(2).DWO.MaxIterations = 4;
+
 
 % Add to job list
 JOBLIST(1) = SegmentItem;
