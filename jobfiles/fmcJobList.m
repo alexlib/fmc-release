@@ -84,12 +84,15 @@ DefaultJob.Parameters.Processing.MultiPeak = 0;
 DefaultJob.Parameters.Processing.FMC.FmcDifferenceMethod = 'forward';
 
 % Discrete window offset parameters
-DefaultJob.Parameters.Processing.DWO.DoDiscreteWindowOffset = 0;
+DefaultJob.Parameters.Processing.DWO.DoDiscreteWindowOffset = false;
 DefaultJob.Parameters.Processing.DWO.DwoDifferenceMethod = 'central';
+DefaultJob.Parameters.Processing.DWO.ConvergenceCriterion = 0.01;
+DefaultJob.Parameters.Processing.DWO.MaxIterations = 1;
+DefaultJob.Parameters.Processing.DWO.Converge = true;
 
 % Image deformation parameters
 DefaultJob.Parameters.Processing.Deform.DoImageDeformation = 0;
-DefaultJob.Parameters.Processing.Deform.MaxIterations = 1;
+DefaultJob.Parameters.Processing.Deform.MaxIterations = 4;
 DefaultJob.Parameters.Processing.Deform.ConvergenceCriterion = 0.01;
 
 % Smoothing parameters
@@ -127,15 +130,15 @@ SegmentItem.Parameters.Processing(1) = defaultProcessing;
 SegmentItem.Parameters.Processing(1).DwoDifferenceMethod = 'central';
 %
 
-SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 64;
-SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 64;
+SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 32;
+SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 32;
 SegmentItem.Parameters.Processing(1).Grid.Buffer.Y = [0, 0];
 SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 128;
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 128;
-SegmentItem.Parameters.Processing(1).DWO.DoDiscreteWindowOffset = 1;
-SegmentItem.Parameters.Processing(1).Deform.DoImageDeformation = 0;
-SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 0;
+SegmentItem.Parameters.Processing(1).DWO.DoDiscreteWindowOffset = 0;
+SegmentItem.Parameters.Processing(1).Deform.DoImageDeformation = 1;
+SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
 SegmentItem.Parameters.Processing(1).Correlation.Method = 'rpc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];

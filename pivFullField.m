@@ -531,7 +531,7 @@ while thisPass <= numberOfPasses;
     % repeat the previous pass. 
     
     % This determines whether DWO convergence iterations were specified
-    doDwoConvergence = JobFile.Parameters.Processing(p).DwoConverge;
+    doDwoConvergence = JobFile.Parameters.Processing(p).DWO.Converge;
     
     % If DWO convergence was specified (and at least one pass has
     % completed), then check the other parameters regarding DWO convergence
@@ -540,10 +540,10 @@ while thisPass <= numberOfPasses;
         disp('Convergence requested. Checking convergence.')
         
         % Determine the maximum number of iterations specified
-        maxDwoConvergenceIterations = JobFile.Parameters.Processing(p).DwoMaxConvergenceIterations;
+        maxDwoConvergenceIterations = JobFile.Parameters.Processing(p).DWO.MaxIterations;
         
         % Determine the DWO convergence criteria
-        dwoConvergenceCriteria = JobFile.Parameters.Processing(p).DwoConvergenceCriteria;
+        dwoConvergenceCriteria = JobFile.Parameters.Processing(p).DWO.ConvergenceCriterion;
         
         % If at least one DWO iteration has been completed...
         if nDwoIterations > 0
