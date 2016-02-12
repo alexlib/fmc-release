@@ -27,17 +27,13 @@ dwo_difference_method = ProcessingParameters.DWO.DwoDifferenceMethod;
 imageHeight = ProcessingParameters.Images.Height;
 imageWidth  = ProcessingParameters.Images.Width;
 
-% Interrogation Region height and width
-regionHeight = ProcessingParameters.InterrogationRegion.Height;
-regionWidth  = ProcessingParameters.InterrogationRegion.Width;
-
 % Grid spacing parameters
 gridSpacingY = ProcessingParameters.Grid.Spacing.Y;
 gridSpacingX = ProcessingParameters.Grid.Spacing.X;
 
 % Make sure the grid buffer is at least half the size of the interrogation region
-gridBufferY = max(ProcessingParameters.Grid.Buffer.Y, ceil(regionHeight / 2));
-gridBufferX = max(ProcessingParameters.Grid.Buffer.X, ceil(regionWidth / 2));
+gridBufferY = ProcessingParameters.Grid.Buffer.Y;
+gridBufferX = ProcessingParameters.Grid.Buffer.X;
 
 % Create the initial rectangular grid
 [x_grid_rect, y_grid_rect] = ...
@@ -100,19 +96,6 @@ else
 
 end
 
-% These lines prevent the grid shifts from placing grid points that
-% would result in regions that extend past the image.
-x_grid_01((x_grid_01 - floor(regionWidth/2)) < 1 ) = floor(regionWidth/2);
-x_grid_01((x_grid_01 +  ceil(regionWidth/2)) > imageWidth) = imageWidth - ceil(regionWidth/2);
-
-x_grid_02((x_grid_02 - floor(regionWidth/2)) < 1 ) = floor(regionWidth/2);
-x_grid_02((x_grid_02 +  ceil(regionWidth/2)) > imageWidth) = imageWidth - ceil(regionWidth/2);
-
-y_grid_01((y_grid_01 - floor(regionHeight/2)) < 1) = floor(regionHeight/2);
-y_grid_01((y_grid_01 +  ceil(regionHeight/2)) > imageHeight) = imageHeight - ceil(regionHeight/2);
-
-y_grid_02((y_grid_02 - floor(regionHeight/2)) < 1) = floor(regionHeight/2);
-y_grid_02((y_grid_02 +  ceil(regionHeight/2)) > imageHeight) = imageHeight - ceil(regionHeight/2);
 
 end
 

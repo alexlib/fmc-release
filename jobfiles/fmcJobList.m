@@ -134,8 +134,8 @@ SegmentItem.Parameters.Processing(1).Grid.Buffer.Y = [0, 0];
 SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 128;
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 128;
-SegmentItem.Parameters.Processing(1).DWO.DoDiscreteWindowOffset = 0;
-SegmentItem.Parameters.Processing(1).Deform.DoImageDeformation = 1;
+SegmentItem.Parameters.Processing(1).DWO.DoDiscreteWindowOffset = 1;
+SegmentItem.Parameters.Processing(1).Deform.DoImageDeformation = 0;
 SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
 SegmentItem.Parameters.Processing(1).Correlation.Method = 'scc';
 SegmentItem.Parameters.Processing(1). ...
@@ -147,7 +147,7 @@ SegmentItem.Parameters.Processing(2).Grid.Spacing.X = 16;
 SegmentItem.Parameters.Processing(2).Grid.Spacing.Y = 16;
 SegmentItem.Parameters.Processing(2).InterrogationRegion.Height = 64;
 SegmentItem.Parameters.Processing(2).InterrogationRegion.Width = 64;
-SegmentItem.Parameters.Processing(2).DWO.MaxIterations = 4;
+SegmentItem.Parameters.Processing(2).DWO.MaxIterations = 2;
 
 
 % Add to job list
