@@ -127,7 +127,6 @@ SegmentItem.Parameters.Processing(1) = defaultProcessing;
 % Get rid of this
 SegmentItem.Parameters.Processing(1).DwoDifferenceMethod = 'central';
 
-
 SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 32;
 SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 32;
 SegmentItem.Parameters.Processing(1).Grid.Buffer.Y = [0, 0];

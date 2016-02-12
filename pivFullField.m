@@ -128,60 +128,6 @@ while thisPass <= numberOfPasses;
     % Flag for zero-meaning the interrogation regions
     do_zero_mean = JobFile.Parameters.Processing(p).InterrogationRegion.ZeroMeanRegion;
     
-    % Check deformation flag
-    if p > 1 && doImageDeformation
-        
-        % Smooth field if specified
-        if doSmoothing
-            % Smooth the velocity field.
-            source_field_u{p-1} = smoothField(uVal{p-1}, smoothingKernelDiameter, smoothingGaussianStdDev);
-            source_field_v{p-1} = smoothField(vVal{p-1}, smoothingKernelDiameter, smoothingGaussianStdDev);
-       
-        else
-            source_field_u{p-1} = uVal{p-1};
-            source_field_v{p-1} = vVal{p-1};
-        end
-        
-        % Create the pixel coordinates.
-        [xi_integer, yi_integer] = meshgrid(1:imageWidth, 1:imageHeight);
-        
-        % Shift the pixel coordinates by 0.5 pixels
-        XI = xi_integer - 0.5;
-        YI = yi_integer - 0.5;
-        
-        % Create interpolation structures for the velocity field.
-        % Temporary: change from spline to cubic interpolation, and change
-        % from lienar to nearest neighbor extrapolation. This is for
-        % comparison with prana.
-        interpolant_tx = scatteredInterpolant(gy{p-1}, gx{p-1}, source_field_u{p-1}, 'nearest', 'nearest');
-        interpolant_ty = scatteredInterpolant(gy{p-1}, gx{p-1}, source_field_v{p-1}, 'nearest', 'nearest');
-
-        % This is the velocity field upsampled to every pixel.
-        UI = interpolant_tx(YI, XI);
-        VI = interpolant_ty(YI, XI);
-        
-        % These are the coordinates at which to resample image 1.
-        XD1 = XI - UI/2;
-        YD1 = YI - VI/2;
-        
-        % These are the coordinates at which to resample image 2.
-        XD2 = XI + UI/2;
-        YD2 = YI + VI/2;
-
-        % Resample the images
-        fprintf('Deforming image 1...\n')
-        image1 = sincBlackmanInterp2(image1_raw, XD1 + 0.5, YD1 + 0.5, 8, 'blackman');
-        
-        fprintf('Deforming image 2...\n')
-        image2 = sincBlackmanInterp2(image2_raw, XD2 + 0.5, YD2 + 0.5, 8, 'blackman');
-        
-    else
-        
-        % If not deform or if we're on the first pass, use the raw images.
-        image1 = image1_raw;
-        image2 = image2_raw;
-    end
-    
     % Interrogation region dimensions
     regionHeight = JobFile.Parameters.Processing(p).InterrogationRegion.Height;
     regionWidth = JobFile.Parameters.Processing(p).InterrogationRegion.Width;    
@@ -307,6 +253,69 @@ while thisPass <= numberOfPasses;
     gridBufferY = JobFile.Parameters.Processing(p).Grid.Buffer.Y;
     gridBufferX = JobFile.Parameters.Processing(p).Grid.Buffer.X;
 
+    
+    
+    % Smooth the field if requested. 
+    if p > 1
+        % Smooth field if specified
+        if doSmoothing
+            % Smooth the velocity field.
+            source_field_u{p-1} = smoothField(uVal{p-1}, ...
+                smoothingKernelDiameter, smoothingGaussianStdDev);
+            source_field_v{p-1} = smoothField(vVal{p-1},...
+                smoothingKernelDiameter, smoothingGaussianStdDev);
+       
+        else
+            source_field_u{p-1} = uVal{p-1};
+            source_field_v{p-1} = vVal{p-1};
+        end
+    end
+    
+    
+    % Check deformation flag
+    if p > 1 && doImageDeformation        
+ 
+        % Create the pixel coordinates.
+        [xi_integer, yi_integer] = meshgrid(1:imageWidth, 1:imageHeight);
+        
+        % Shift the pixel coordinates by 0.5 pixels
+        XI = xi_integer - 0.5;
+        YI = yi_integer - 0.5;
+        
+        % Create interpolation structures for the velocity field.
+        % Temporary: change from spline to cubic interpolation, and change
+        % from lienar to nearest neighbor extrapolation. This is for
+        % comparison with prana.
+        interpolant_tx = scatteredInterpolant(gy{p-1}, gx{p-1}, ...
+            source_field_u{p-1}, 'nearest', 'nearest');
+        interpolant_ty = scatteredInterpolant(gy{p-1}, gx{p-1}, ...
+            source_field_v{p-1}, 'nearest', 'nearest');
+
+        % This is the velocity field upsampled to every pixel.
+        UI = interpolant_tx(YI, XI);
+        VI = interpolant_ty(YI, XI);
+        
+        % These are the coordinates at which to resample image 1.
+        XD1 = XI - UI/2;
+        YD1 = YI - VI/2;
+        
+        % These are the coordinates at which to resample image 2.
+        XD2 = XI + UI/2;
+        YD2 = YI + VI/2;
+
+        % Resample the images
+        fprintf('Deforming image 1...\n')
+        image1 = sincBlackmanInterp2(image1_raw, XD1 + 0.5, YD1 + 0.5, 8, 'blackman');
+        
+        fprintf('Deforming image 2...\n')
+        image2 = sincBlackmanInterp2(image2_raw, XD2 + 0.5, YD2 + 0.5, 8, 'blackman');
+        
+    else
+        % If not deform or if we're on the first pass, use the raw images.
+        image1 = image1_raw;
+        image2 = image2_raw;
+    end
+      
     % If the pass number is greater than one, i.e., if at least one pass has
     % finished, and also if discrete window offset is enabled,
     % then interpolate the velocity field from the previous pass
@@ -314,11 +323,16 @@ while thisPass <= numberOfPasses;
     % Round the grid shift values so that grid points are shifted
     % from integer coordinates to integercoordinates
     if p > 1 && doDiscreteWindowOffset
-        [gx{p}, gy{p}, gx_01, gy_01, gx_02, gy_02] = discreteWindowOffset(gx{p-1}, gy{p-1}, uVal{p-1}, vVal{p-1}, JobFile.Parameters.Processing(p));
+        [gx{p}, gy{p}, gx_01, gy_01, gx_02, gy_02] = ...
+            discreteWindowOffset(gx{p-1}, gy{p-1}, ...
+            source_field_u{p-1}, source_field_v{p-1}, ...
+            JobFile.Parameters.Processing(p));
         
     else
-         % Generate the list of coordinates that specifies the (X, Y) centers of all of the interrogation regions 
-        [ gx{p}, gy{p} ] = gridImage([imageHeight, imageWidth], [gridSpacingY gridSpacingX], gridBufferY, gridBufferX);
+         % Generate the list of coordinates that specifies the (X, Y) 
+         % centers of all of the interrogation regions 
+        [ gx{p}, gy{p} ] = gridImage([imageHeight, imageWidth], ...
+            [gridSpacingY gridSpacingX], gridBufferY, gridBufferX);
    
         % If this is the first pass or if DWO is not specified, then keep
         % the original grid points.
@@ -341,24 +355,19 @@ while thisPass <= numberOfPasses;
     % Determine the number of interrogation regions to be correlated
     nRegions = numRows * numColumns;
     
-    %%%% TEMP
-    grid_x_temp_01{p} = gx_01(:);
-    grid_y_temp_01{p} = gy_01(:);
-
-    grid_x_temp_02{p} = gx_02(:);
-    grid_y_temp_02{p} = gy_02(:);
-
-    % Extract the subregions from each image.
-    regionMatrix1 = extractSubRegions(image1, [regionHeight, regionWidth], gx_01(:), gy_01(:));
-    regionMatrix2 = extractSubRegions(image2, [regionHeight, regionWidth], gx_02(:), gy_02(:));
+    % Extract the subregions from image 1.
+    regionMatrix1 = extractSubRegions(image1, ...
+        [regionHeight, regionWidth], gx_01(:), gy_01(:));
+    
+    % Extract the subregions from image 2.
+    regionMatrix2 = extractSubRegions(image2, ...
+        [regionHeight, regionWidth], gx_02(:), gy_02(:));
     
     % Preallocate memory for the vectors to hold the estimates of translation, rotation, and scaling.
     estimatedTranslationY = zeros(nRegions, 1);
     estimatedTranslationX = zeros(nRegions, 1);
     estimatedRotation = zeros(nRegions, 1); 
     estimatedScaling = ones(nRegions, 1);
-    fmiTranslationY = zeros(nRegions, 1);
-    fmiTranslationX = zeros(nRegions, 1);
     
     % % Preallocate memory for disparity
     % disparity_x_vector = zeros(nRegions, 1);
@@ -455,7 +464,8 @@ while thisPass <= numberOfPasses;
         %     [DISPARITY_X, DISPARITY_Y] = calculateTransformedRegionDisparity(subRegion1, subRegion2,...
         %         estimatedTranslationY(k), estimatedTranslationX(k),...
         %         estimatedRotation(k), estimatedScaling(k), xImage, yImage, 0.95, 2, COMPILED);
-        % end    
+        % end
+        
     end % end for k = 1 : nRegions
 
     % Calculate the peak diameter magnitude
@@ -660,7 +670,7 @@ save(FilePaths.OutputFilePath, ...
     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
     'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw',...
     'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', ...
-    'hasConverged', 'source_field_u', 'source_field_v', ...
+    'hasConverged', ...
     'FilePaths', 'JobFile');
 
 end
