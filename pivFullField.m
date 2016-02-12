@@ -23,6 +23,12 @@ image2_import = double(imread(FILEPATHS.SecondImagePath));
 % Image dimensions
 [imageHeight, imageWidth, num_channels] = size(image1_import);
 
+% Save the image size to the processing field for easy passing around.
+for p = 1 : number_of_passes
+    JOBFILE.Parameters.Processing(p).Images.Height = imageHeight;
+    JOBFILE.Parameters.Processing(p).Images.Width  = imageWidth;
+end
+
 % Extract the channel
 if num_channels > 1
     % Make sure the color channel is specified
@@ -104,6 +110,7 @@ num_iterations = 0;
 % Loop over the passes.
 % for p = 1 : numberOfPasses;
 while thisPass <= number_of_passes;
+    %% This region of the code reads the parameters for each pass.
     
     % Increment the pass counter 
     p = p + 1;
@@ -120,18 +127,30 @@ while thisPass <= number_of_passes;
     % Smoothing kernel gaussian standard deviation  
     smoothingGaussianStdDev = JobFile.Parameters.Processing(p).Smoothing.KernelGaussianStdDev;
     
-    % Flag to calculate image disparity
-    % calculateImageDisparity = JobFile.Parameters.Processing(p).DoImageDisparity;
-    
     % Flag for zero-meaning the interrogation regions
     do_zero_mean = JobFile.Parameters.Processing(p).InterrogationRegion.ZeroMeanRegion;
     
     % Interrogation region dimensions
     regionHeight = JobFile.Parameters.Processing(p).InterrogationRegion.Height;
-    regionWidth = JobFile.Parameters.Processing(p).InterrogationRegion.Width;    
+    regionWidth  = JobFile.Parameters.Processing(p).InterrogationRegion.Width;    
+        
+    % FFT Parameters
+    fftSize = JobFile.Parameters.Processing(p).FFTSize;
+    spectrum_height = fftSize(1);
+    spectrum_width  = fftSize(2);
     
+    %% These things are specific to FMC, but run for all methods
+    % because of some issues with the parfor loop (I think).
+    
+    % Window sizes and types for FMC; this is specific to FMC.
+    fmiWindowSize = ...
+        JobFile.Parameters.Processing(p).InterrogationRegion.FMIWindowSize;
+    fmiWindowType = ...
+        JobFile.Parameters.Processing(p).InterrogationRegion.FMIWindowType;
+
     % Fmc difference method
-    fmcDifferenceMethod_string = JobFile.Parameters.Processing(p).FMC.FmcDifferenceMethod; 
+    fmcDifferenceMethod_string =...
+        JobFile.Parameters.Processing(p).FMC.FmcDifferenceMethod; 
     
     % Determine what FMC difference method to use. 
     % fmcDifferenceMethod = 1 is central difference.
@@ -145,22 +164,49 @@ while thisPass <= number_of_passes;
         % Default to central difference
         fmcDifferenceMethod = 1;
     end
-    
-    % Apodization window parameters.
-    spatialWindowFraction = JobFile.Parameters.Processing(p).InterrogationRegion.SpatialWindowFraction;
-    fmiWindowSize = JobFile.Parameters.Processing(p).InterrogationRegion.FMIWindowSize;
-    fmiWindowType = JobFile.Parameters.Processing(p).InterrogationRegion.FMIWindowType;
 
-    % FFT Parameters
-    fftSize = JobFile.Parameters.Processing(p).FFTSize;
-    spectrum_height = fftSize(1);
-    spectrum_width  = fftSize(2);
-
-    % Image resampling parameters
+    % Image resampling parameters, specific to FMC processing.
     numberOfRings = JobFile.Parameters.Processing(p).Correlation.FMC.NumberOfRings;
     numberOfWedges = JobFile.Parameters.Processing(p).Correlation.FMC.NumberOfWedges;
     rMin = JobFile.Parameters.Processing(p).Correlation.FMC.MinimumRadius;
     rMax = min(spectrum_height, spectrum_width) / 2 - 1;
+    
+    % Figure out the log polar resampling coordinates.
+    % This is specific to FMC.
+    % It's dumb to do this even if FMC isn't specified, but
+    % I haven't taken the time to fix it. 
+    [xLP, yLP] = LogPolarCoordinates([spectrum_height, spectrum_width], ...
+        numberOfWedges, numberOfRings, rMin, rMax, 2 * pi);
+    
+    % "RPC" diameter used for the FMC correlations.
+    fmiRpcDiameter = ...
+        JobFile.Parameters.Processing(p).Correlation.FMC.FilterDiameter; 
+    
+    % Create the FMI spectral filter (i.e. the FMI RPC filter).
+    fmiSpectralFilter = spectralEnergyFilter(...
+        numberOfWedges, numberOfRings, fmiRpcDiameter); 
+
+    % Determine the FMI window type. This is specific to FMC.
+    isHann1 = ~isempty(regexpi(fmiWindowType, 'hann1'));
+    isHann2 = ~isempty(regexpi(fmiWindowType, 'hann2'));
+    isGaussianSkew = ~isempty(regexpi(fmiWindowType, 'gauss_skew'));
+    
+    % Create the FMI Window
+    if isHann1
+        fmiWindow1D = hann1(numberOfRings, [fmiWindowSize(1) fmiWindowSize(2)], fmiWindowSize(3));
+        fmiWindow = repmat(fmiWindow1D, numberOfWedges, 1);
+    elseif isHann2
+        fmiWindow = hann2([numberOfWedges, numberOfRings], fmiWindowSize(1));
+    elseif isGaussianSkew
+        fmiWindow1D = gaussianWindowFilter_asymmetric(numberOfRings, fmiWindowFraction);
+        fmiWindow = repmat(fmiWindow1D, numberOfWedges, 1);
+    else
+        fmiWindow = gaussianWindowFilter([numberOfWedges, numberOfRings], fmiWindowSize, 'fraction');
+    end
+    
+    
+    
+    %%
 
     % Correlation parameters
     correlationMethod = JobFile.Parameters.Processing(p).Correlation.Method;
@@ -172,15 +218,17 @@ while thisPass <= number_of_passes;
     
     % RPC diameters
     spatialRPCDiameter = JobFile.Parameters.Processing(p).Correlation.RPC.FilterDiameter;
-    fmiRpcDiameter = JobFile.Parameters.Processing(p).Correlation.FMC.FilterDiameter; 
-
-    % Create the gaussian intensity window to be applied to the the raw image interrogation regions
-    spatialWindow = gaussianWindowFilter_prana([regionHeight, regionWidth], spatialWindowFraction .* [regionHeight, regionWidth]);
     
-    % Determine the FMI window type.
-    isHann1 = ~isempty(regexpi(fmiWindowType, 'hann1'));
-    isHann2 = ~isempty(regexpi(fmiWindowType, 'hann2'));
-    isGaussianSkew = ~isempty(regexpi(fmiWindowType, 'gauss_skew'));
+    % Apodization window parameters (window size for the interrogation
+    % regions; applies to all methods).
+    spatialWindowFraction = ...
+        JobFile.Parameters.Processing(p).InterrogationRegion.SpatialWindowFraction;
+      
+    % Create the gaussian intensity window to be applied
+    % to the raw image interrogation regions
+    spatialWindow = gaussianWindowFilter_prana(...
+        [regionHeight, regionWidth], ...
+        spatialWindowFraction .* [regionHeight, regionWidth]);
     
     % Extract the string specifying the subpixel peak fit method
     subpixel_peak_fit_method =...
@@ -197,49 +245,16 @@ while thisPass <= number_of_passes;
     else
          subpixel_peak_fit_method_numerical = 1;
     end
-    
-    % Create the FMI Window
-    if isHann1
-        fmiWindow1D = hann1(numberOfRings, [fmiWindowSize(1) fmiWindowSize(2)], fmiWindowSize(3));
-        fmiWindow = repmat(fmiWindow1D, numberOfWedges, 1);
-    elseif isHann2
-        fmiWindow = hann2([numberOfWedges, numberOfRings], fmiWindowSize(1));
-    elseif isGaussianSkew
-        fmiWindow1D = gaussianWindowFilter_asymmetric(numberOfRings, fmiWindowFraction);
-        fmiWindow = repmat(fmiWindow1D, numberOfWedges, 1);
-    else
-        fmiWindow = gaussianWindowFilter([numberOfWedges, numberOfRings], fmiWindowSize, 'fraction');
-    end
 
-    % Create the gaussian spectral energy filter be applied to the raw image correlation
-    imageSpectralFilter = spectralEnergyFilter(regionHeight, regionWidth, spatialRPCDiameter); 
-
-    % Create the FMI spectral filter (i.e. the FMI RPC filter).
-    fmiSpectralFilter = spectralEnergyFilter(numberOfWedges, numberOfRings, fmiRpcDiameter); 
+    % This creates the RPC filter that gets applied to the correlations
+    % of the particle images; it applies to RPC and FMC (and SPC later).
+    imageSpectralFilter = spectralEnergyFilter(...
+        regionHeight, regionWidth, spatialRPCDiameter); 
 
     % Make a matrix of the subregion coordinates.
     % Do this only once to increase speed (meshgrid is slow).
     [xImage, yImage] = meshgrid(1 : regionWidth, 1 : regionHeight);
-
-    % FFT Spectrum coordinates
-    [xSpectrum, ySpectrum] = meshgrid(1:spectrum_width, 1:spectrum_height);
-
-    % Figure out the log polar resampling coordinates.
-    [xLP, yLP] = LogPolarCoordinates([spectrum_height, spectrum_width], ...
-        numberOfWedges, numberOfRings, rMin, rMax, 2 * pi);
     
-    % Universal Outlier Detection Parameters
-    uodStencilRadius = JobFile.Parameters.Processing(p).Validation.UodStencilRadius;
-    uodThreshold = JobFile.Parameters.Processing(p).Validation.UodThreshold;
-    uodExpectedDifference = JobFile.Parameters.Processing(p).Validation.UodExpectedDifference;
-    
-    % Save the image size to the processing field for easy passing around.
-    JobFile.Parameters.Processing(p).Images.Height = imageHeight;
-    JobFile.Parameters.Processing(p).Images.Width  = imageWidth;
-
-%     % Discrete window offset differencing method
-%     dwoDifferenceMethod = JobFile.Parameters.Processing(p).DWO.DwoDifferenceMethod;
-%     
     % Grid parameters
     gridSpacingX = JobFile.Parameters.Processing(p).Grid.Spacing.X;
     gridSpacingY = JobFile.Parameters.Processing(p).Grid.Spacing.Y;
@@ -248,7 +263,7 @@ while thisPass <= number_of_passes;
     gridBufferY = JobFile.Parameters.Processing(p).Grid.Buffer.Y;
     gridBufferX = JobFile.Parameters.Processing(p).Grid.Buffer.X;
 
-    % Iterative method
+    % Iterative method (DWO, Deform, etc)
     iterative_method = JobFile.Parameters.Processing(p).Iterative.Method;
     
     % Check what iterative method is requested (if any)
@@ -260,7 +275,7 @@ while thisPass <= number_of_passes;
         doDiscreteWindowOffset = true;
     else
         doImageDeformation = false;
-        doDiscreteWIndowOffset = false;
+        doDiscreteWindowOffset = false;
     end
     
     % Smooth the field if requested. 
@@ -278,7 +293,6 @@ while thisPass <= number_of_passes;
             source_field_v{p-1} = vVal{p-1};
         end
     end
-    
     
     % Check deformation flag
     if p > 1 && doImageDeformation        
@@ -376,15 +390,7 @@ while thisPass <= number_of_passes;
     estimatedTranslationX = zeros(nRegions, 1);
     estimatedRotation = zeros(nRegions, 1); 
     estimatedScaling = ones(nRegions, 1);
-    
-    % % Preallocate memory for disparity
-    % disparity_x_vector = zeros(nRegions, 1);
-    % disparity_y_vector = zeros(nRegions, 1);
-    
-    % % Number of particles identified in each region
-    % % this is for image disparity calculation
-    % nParticles = zeros(nRegions, 1);
-
+   
     % Initialize FMC peak height ratio vector.
     fmcPeakRatio = zeros(nRegions, 1);
 
@@ -410,6 +416,8 @@ while thisPass <= number_of_passes;
     
     % Start a timer
     t = tic;
+    
+    %%
     
     % Do all the correlations for the image.
     parfor k = 1 : nRegions
@@ -467,13 +475,6 @@ while thisPass <= number_of_passes;
                 subpixel_peak_fit_method_numerical);
         end
         
-        % % These lines will calculate the disparity between regions.
-        % if calculateImageDisparity
-        %     [DISPARITY_X, DISPARITY_Y] = calculateTransformedRegionDisparity(subRegion1, subRegion2,...
-        %         estimatedTranslationY(k), estimatedTranslationX(k),...
-        %         estimatedRotation(k), estimatedScaling(k), xImage, yImage, 0.95, 2, COMPILED);
-        % end
-        
     end % end for k = 1 : nRegions
 
     % Calculate the peak diameter magnitude
@@ -526,12 +527,6 @@ while thisPass <= number_of_passes;
     % Reshape the peak ratio measurements into matrices.
     SPATIAL_PEAK_RATIO{p} = flipud(reshape(spatialPeakRatio, numRows, numColumns));
     FMC_PEAK_RATIO{p} = flipud(reshape(fmcPeakRatio, numRows, numColumns));
-    
-    % % Reshape the disparity vectors into matrices.
-    % DISPARITY_X{p} = flipud(reshape(disparity_x_vector, numRows, numColumns));
-    % DISPARITY_Y{p} = flipud(reshape(disparity_y_vector, numRows, numColumns));
-    % N_PARTICLES{p} = flipud(reshape(nParticles, numRows, numColumns));
-
     
     % Extract the validation parameters
     validation_parameters = JobFile.Parameters.Processing(p).Validation;

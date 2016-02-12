@@ -90,7 +90,8 @@ for n = 1 : number_of_jobs
             image_directory, '..', 'vect', ...
             correlation_method, ...
             [num2str(region_height) 'x' num2str(region_width)],...
-            ['cstep_' num2str(correlation_step, '%02.0f')]);        
+            ['cstep_' num2str(correlation_step, '%02.0f')]);
+        
     end
     
     % Determine the path to the output directory and create it if it doesn't exist.
@@ -109,7 +110,7 @@ for n = 1 : number_of_jobs
     % Determine the number of pairs that will be correlated
     number_of_pairs = length(firstImageNumbers);
    
-    % Do the correlations
+    % Loop over the image pairs.
     for k = 1 : number_of_pairs
         
         % File path to the first image
@@ -130,7 +131,7 @@ for n = 1 : number_of_jobs
             [output_base_name ...
             num2str(firstImageNumbers(k), output_number_format) ...
             '_' num2str(secondImageNumbers(k), ...
-            output_number_format) '.mat']);
+            output_number_format) '_' correlation_method '.mat']);
         
         % This if-statement skips frames for which output data exist
         % if the "skip existing frames" option is enabled.
