@@ -278,7 +278,8 @@ while thisPass <= numberOfPasses;
     [xSpectrum, ySpectrum] = meshgrid(1:spectrum_width, 1:spectrum_height);
 
     % Figure out the log polar resampling coordinates.
-    [xLP, yLP] = LogPolarCoordinates([spectrum_height, spectrum_width], numberOfWedges, numberOfRings, rMin, rMax, 2 * pi);
+    [xLP, yLP] = LogPolarCoordinates([spectrum_height, spectrum_width], ...
+        numberOfWedges, numberOfRings, rMin, rMax, 2 * pi);
 
     % Universal Outlier Detection Parameters
     uodStencilRadius = JobFile.Parameters.Processing(p).Validation.UodStencilRadius;
@@ -290,10 +291,10 @@ while thisPass <= numberOfPasses;
     JobFile.Parameters.Processing(p).Images.Width  = imageWidth;
 
     % Flag specifying whether or not to do DWO
-    doDiscreteWindowOffset = JobFile.Parameters.Processing(p).DoDiscreteWindowOffset;
+    doDiscreteWindowOffset = JobFile.Parameters.Processing(p).DWO.DoDiscreteWindowOffset;
     
     % Discrete window offset differencing method
-    dwoDifferenceMethod = JobFile.Parameters.Processing(p).DwoDifferenceMethod;
+    dwoDifferenceMethod = JobFile.Parameters.Processing(p).DWO.DwoDifferenceMethod;
     
     % Grid parameters
     gridSpacingX = JobFile.Parameters.Processing(p).Grid.Spacing.X;
@@ -391,7 +392,9 @@ while thisPass <= numberOfPasses;
     t = tic;
     
     % Do all the correlations for the image.
-    parfor k = 1 : nRegions
+    for k = 1 : nRegions
+        
+        fprintf(1, 'On region %d of %d\n', k, nRegions);
         
         % Extract the subregions from the subregion stacks.
         subRegion1 = regionMatrix1(:, :, k);
