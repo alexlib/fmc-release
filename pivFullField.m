@@ -153,9 +153,9 @@ while thisPass <= numberOfPasses;
         % Temporary: change from spline to cubic interpolation, and change
         % from lienar to nearest neighbor extrapolation. This is for
         % comparison with prana.
-        interpolant_tx = griddedInterpolant(gy{p-1}, gx{p-1}, source_field_u{p-1}, 'cubic', 'nearest');
-        interpolant_ty = griddedInterpolant(gy{p-1}, gx{p-1}, source_field_v{p-1}, 'cubic', 'nearest');
-        
+        interpolant_tx = scatteredInterpolant(gy{p-1}, gx{p-1}, source_field_u{p-1}, 'nearest', 'nearest');
+        interpolant_ty = scatteredInterpolant(gy{p-1}, gx{p-1}, source_field_v{p-1}, 'nearest', 'nearest');
+
         % This is the velocity field upsampled to every pixel.
         UI = interpolant_tx(YI, XI);
         VI = interpolant_ty(YI, XI);
