@@ -210,9 +210,9 @@ while thisPass <= numberOfPasses;
     spectrum_width  = fftSize(2);
 
     % Image resampling parameters
-    numberOfRings = JobFile.Parameters.Processing(p).Resampling.NumberOfRings;
-    numberOfWedges = JobFile.Parameters.Processing(p).Resampling.NumberOfWedges;
-    rMin = JobFile.Parameters.Processing(p).Resampling.MinimumRadius;
+    numberOfRings = JobFile.Parameters.Processing(p).Correlation.FMC.NumberOfRings;
+    numberOfWedges = JobFile.Parameters.Processing(p).Correlation.FMC.NumberOfWedges;
+    rMin = JobFile.Parameters.Processing(p).Correlation.FMC.MinimumRadius;
     rMax = min(spectrum_height, spectrum_width) / 2 - 1;
 
     % Correlation parameters
