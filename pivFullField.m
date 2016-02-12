@@ -280,7 +280,7 @@ while thisPass <= numberOfPasses;
     % Figure out the log polar resampling coordinates.
     [xLP, yLP] = LogPolarCoordinates([spectrum_height, spectrum_width], ...
         numberOfWedges, numberOfRings, rMin, rMax, 2 * pi);
-
+    
     % Universal Outlier Detection Parameters
     uodStencilRadius = JobFile.Parameters.Processing(p).Validation.UodStencilRadius;
     uodThreshold = JobFile.Parameters.Processing(p).Validation.UodThreshold;
@@ -512,11 +512,18 @@ while thisPass <= numberOfPasses;
     % DISPARITY_Y{p} = flipud(reshape(disparity_y_vector, numRows, numColumns));
     % N_PARTICLES{p} = flipud(reshape(nParticles, numRows, numColumns));
 
+    
+    % Extract the validation parameters
+    validation_parameters = JobFile.Parameters.Processing(p).Validation;
+    
     % Run Prana's validation code. Note that right now the rotation
     % The previous codes to do this were "universalOutlierDetection.m"
     % and "universalOutlierReplacement.m"
     % estimate isn't validated.
-    [uVal{p}, vVal{p}, isOutlier{p}] = validateField_prana(gx{p}, gy{p}, TRANSLATIONX{p}, TRANSLATIONY{p}, uodExpectedDifference);
+    [uVal{p}, vVal{p}, isOutlier{p}] = ...
+        validateField_prana(gx{p}, gy{p}, ...
+        TRANSLATIONX{p}, TRANSLATIONY{p}, ...
+        validation_parameters);
         
     % Check for convergence if it's requested. 
     % If the velocity estimate has converged, go on

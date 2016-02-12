@@ -21,9 +21,9 @@ uod_window_size = PARAMETERS.UodWindowSize;
 u_threshold = PARAMETERS.UThresh;
 v_threshold = PARAMETERS.VThresh;
 
-% Coordinate flipping to work with the prana validation code
-v = -V;
-y = flipud(Y);
+% Copy coordinates
+v = V;
+y = Y;
 
 [UvalRaw, VvalRaw, IsOutlierRaw] = VAL( ...
     X(:), y(:), U(:), v(:), ...
@@ -36,7 +36,7 @@ y = flipud(Y);
 
 % Reshape matrices.
 UVAL = flipud(reshape(UvalRaw, [gridHeight, gridWidth]));
-VVAL = -1 * flipud(reshape(VvalRaw, [gridHeight, gridWidth]));
+VVAL = flipud(reshape(VvalRaw, [gridHeight, gridWidth]));
 ISOUTLIER = flipud(reshape(IsOutlierRaw, [gridHeight, gridWidth]));
    
 end
