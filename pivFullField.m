@@ -30,32 +30,21 @@ for p = 1 : number_of_passes
 end
 
 % Loads the mask or create a mask of ones if no mask is specified.
-mask_grid = JOBFILE.Parameters.Mask.MaskGrid;
-mask_images = JOBFILE.Parameters.Mask.MaskImage;
+do_mask = JOBFILE.Parameters.Mask.DoMasking;
 
-% Load the mask if either type of masking is specified.
-mask_path = JOBFILE.Parameters.Mask.Path;
+% Default to a mask of ones (i.e., unmasked)
+mask = ones(imageHeight, imageWidth);
 
-% Create the grid mask if requested
-if mask_grid
-    grid_mask = double(imread(mask_path));
-else
-    grid_mask = ones(imageHeight, imageWidth);
-end
-
-% Create the image mask if requested
-if mask_images
-    image_mask = double(imread(mask_path));
-else
-    image_mask = ones(imageHeight, imageWidth);
+% Load the mask if requested
+if do_mask
+    mask_path = JOBFILE.Parameters.Mask.Path;
+    if exist(mask_path, 'file')
+        mask = double(imread(mask_path));
+    else
+        fprintf('Mask not found!\n');
+    end
 end
     
-% Mask the images if requested
-if mask_images
-    image1_import = image1_import .* repmat(image_mask, [1, 1, num_channels]);
-    image2_import = image2_import .* repmat(image_mask, [1, 1, num_channels]);
-end
-
 % Extract the appropriate color channel. channel
 if num_channels > 1
     % Make sure the color channel is specified
@@ -390,7 +379,7 @@ while thisPass <= number_of_passes;
          % centers of all of the interrogation regions 
         [ gx{p}, gy{p} ] = gridImage([imageHeight, imageWidth], ...
             [gridSpacingY gridSpacingX], ...
-            gridBufferY, gridBufferX, grid_mask);
+            gridBufferY, gridBufferX);
    
         % If this is the first pass or if DWO is not specified, then keep
         % the original grid points.
@@ -414,11 +403,11 @@ while thisPass <= number_of_passes;
     nRegions = numRows * numColumns;
     
     % Extract the subregions from image 1.
-    regionMatrix1 = extractSubRegions(image1, ...
+    regionMatrix1 = extractSubRegions(image1 .* mask, ...
         [regionHeight, regionWidth], gx_01(:), gy_01(:));
     
     % Extract the subregions from image 2.
-    regionMatrix2 = extractSubRegions(image2, ...
+    regionMatrix2 = extractSubRegions(image2 .* mask, ...
         [regionHeight, regionWidth], gx_02(:), gy_02(:));
     
     % Preallocate memory for the vectors to hold the 
@@ -435,16 +424,6 @@ while thisPass <= number_of_passes;
 
     % Initialize RPC peak height ratio vector.
     spatialPeakRatio = zeros(nRegions, 1);
-    
-    % height of the primary spatial peaks
-    spatialPeakHeight = zeros(nRegions, 1);
-    
-    % Diameter of primary spatial peaks
-    spatialPeakDiameter = zeros(nRegions, 1);
-    
-    % Peak axis lengths
-    DX = zeros(nRegions, 1);
-    DY = zeros(nRegions, 1);
     
     % Start a timer
     t = tic;
@@ -475,50 +454,53 @@ while thisPass <= number_of_passes;
         subRegion1 = regionMatrix1(:, :, k);
         subRegion2 = regionMatrix2(:, :, k);
         
-        % Zero mean the region if requested
-        if do_zero_mean
-            subRegion1 = zero_mean_region(subRegion1);
-            subRegion2 = zero_mean_region(subRegion2);
-        end
-                
-        % Perform FMC correlation. 
-        if isFmc
-            % Perform the FMC correlation.
-            [estimatedTranslationY(k), estimatedTranslationX(k),...
-            estimatedRotation(k), estimatedScaling(k), ...
-            fmcPeakRatio(k), spatialPeakRatio(k)] = ...
-            ...
-            FMC(subRegion1, subRegion2, spatialWindow, imageSpectralFilter,...
-            fmiWindow, fmiSpectralFilter, ...
-            xImage, yImage, ...
-            spectrum_height, spectrum_width,...
-            xLP, yLP, rMin, rMax, fmcDifferenceMethod, COMPILED);
+        if max(subRegion1(:)) > 0
         
-        % Perform RPC correlation 
-        % The zero in this input means "Do not search multiple peaks,"
-        % i.e., use only the primary peak.
-        elseif isRpc
-            [estimatedTranslationY(k), estimatedTranslationX(k), ...
-                rpcPlane]...
-                = RPC(...
-                spatialWindow .* subRegion1, ...
-                spatialWindow .* subRegion2,...
-                imageSpectralFilter, subpixel_peak_fit_method_numerical); 
-
-            % Measure the peak height ratio
-            if COMPILED
-                spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
-            else
-                spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
+            % Zero mean the region if requested
+            if do_zero_mean
+                subRegion1 = zero_mean_region(subRegion1);
+                subRegion2 = zero_mean_region(subRegion2);
             end
 
-        % Perform SCC analysis.
-        elseif isScc
-            [estimatedTranslationY(k), estimatedTranslationX(k)]...
-                = SCC(...
-                spatialWindow .* subRegion1, ...
-                spatialWindow .* subRegion2,...
-                subpixel_peak_fit_method_numerical);
+            % Perform FMC correlation. 
+            if isFmc
+                % Perform the FMC correlation.
+                [estimatedTranslationY(k), estimatedTranslationX(k),...
+                estimatedRotation(k), estimatedScaling(k), ...
+                fmcPeakRatio(k), spatialPeakRatio(k)] = ...
+                ...
+                FMC(subRegion1, subRegion2, spatialWindow, imageSpectralFilter,...
+                fmiWindow, fmiSpectralFilter, ...
+                xImage, yImage, ...
+                spectrum_height, spectrum_width,...
+                xLP, yLP, rMin, rMax, fmcDifferenceMethod, COMPILED);
+
+            % Perform RPC correlation 
+            % The zero in this input means "Do not search multiple peaks,"
+            % i.e., use only the primary peak.
+            elseif isRpc
+                [estimatedTranslationY(k), estimatedTranslationX(k), ...
+                    rpcPlane]...
+                    = RPC(...
+                    spatialWindow .* subRegion1, ...
+                    spatialWindow .* subRegion2,...
+                    imageSpectralFilter, subpixel_peak_fit_method_numerical); 
+
+                % Measure the peak height ratio
+                if COMPILED
+                    spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
+                else
+                    spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
+                end
+
+            % Perform SCC analysis.
+            elseif isScc
+                [estimatedTranslationY(k), estimatedTranslationX(k)]...
+                    = SCC(...
+                    spatialWindow .* subRegion1, ...
+                    spatialWindow .* subRegion2,...
+                    subpixel_peak_fit_method_numerical);
+            end
         end
         
     end % end for k = 1 : nRegions
@@ -609,9 +591,25 @@ while thisPass <= number_of_passes;
             % Determine the 2-norm of the velocity field components compared to
             % the previous pass. This is the metric against which the
             % convergence criteria is compared.
-            uNorm(p) = mean(abs(TRANSLATIONX{p}(:) - TRANSLATIONX{p-1}(:)));
-            vNorm(p) = mean(abs(TRANSLATIONY{p}(:) - TRANSLATIONY{p-1}(:)));
-            rNorm(p) = mean(abs(ROTATION{p}(:) - ROTATION{p-1}(:)));
+            
+            % Find the indices where all the displacements are nonzero.
+            % Identically zero displacements should only evaluate
+            % where the image was zero; i.e., masked.
+            inds = ...
+                abs(TRANSLATIONX{p}(:)) > 0 & ...
+                abs(TRANSLATIONY{p}(:)) & ...
+                abs(TRANSLATIONX{p - 1}(:)) > 0 & ...
+                abs(TRANSLATIONY{p - 1}(:)) > 0;
+            
+            % Calculate the norm of the magnitude of
+            % the difference of the horizontal velocities. 
+            uNorm(p) = ...
+                mean(abs(TRANSLATIONX{p}(inds) - TRANSLATIONX{p-1}(inds)));
+            
+            % Calculate the norm of the magnitude of
+            % the difference of the vertical velocities. 
+            vNorm(p) = ...
+                mean(abs(TRANSLATIONY{p}(inds) - TRANSLATIONY{p-1}(inds)));
             
             % Inform the user
             disp(...
