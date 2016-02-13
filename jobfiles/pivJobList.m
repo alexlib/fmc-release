@@ -1,5 +1,13 @@
 function JOBLIST = pivJobList()
 
+% This line specifies whether you want to run the 
+% list of jobs after creating it (i.e., during the call to
+% pivJobList). If true, calling pivJobList with no arguments
+% will create the list of jobs specified in this file and then 
+% run them in order. If false, it will just create the 
+% list of jobs, and return them as a structure called JOBLIST.
+run_job_list = true;
+
 % Load the defaults from a separate file.
 % This file contains all of the parameters
 % necessary to run a job, but many of them 
@@ -89,7 +97,12 @@ Job.Parameters.Processing(2).Correlation.Method = 'fmc';
 % Append the job to the job list.
 JOBLIST(end + 1) = Job;
 
-
+% This line runs the jobfile.
+% The option run_job_list is set
+% at the very top of this file.
+if run_job_list
+    runPivFullFieldJobList(JOBLIST);
+end
 
 end
 
