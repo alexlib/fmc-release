@@ -500,8 +500,8 @@ while thisPass <= number_of_passes;
     fprintf('Correlation times (pass %d): %0.2f seconds.\n', p, toc(t));
     
     % Reshape the raw measured displacements into matrices.
-    tx_raw{p} = reshape(estimatedTranslationX, numRows, numColumns);
-    ty_raw{p} = reshape(estimatedTranslationY, numRows, numColumns);
+    tx_raw = reshape(estimatedTranslationX, numRows, numColumns);
+    ty_raw = reshape(estimatedTranslationY, numRows, numColumns);
     
     % Shift the measured velocities by the deform or DWO values. 
     if doImageDeformation
@@ -525,14 +525,14 @@ while thisPass <= number_of_passes;
         end
         
         % Add the shift values to the measured displacements for deform.
-        TRANSLATIONX{p} = tx_raw{p} + tx_shift;
-        TRANSLATIONY{p} = ty_raw{p} + ty_shift;
+        TRANSLATIONX{p} = tx_raw + tx_shift;
+        TRANSLATIONY{p} = ty_raw + ty_shift;
         
     else     
         % If not deform then just shift the velocities by the DWO grid
         % shift values, which are already zeros if DWO wasn't used.
-        TRANSLATIONX{p} = tx_raw{p} + gridShiftX_02 - gridShiftX_01;
-        TRANSLATIONY{p} = ty_raw{p} + gridShiftY_02 - gridShiftY_01;
+        TRANSLATIONX{p} = tx_raw + gridShiftX_02 - gridShiftX_01;
+        TRANSLATIONY{p} = ty_raw + gridShiftY_02 - gridShiftY_01;
     end
     
     % Reshape the rotation and scaling measurements into matrices.
@@ -691,7 +691,7 @@ end
 % Save the results to file.
 save(FilePaths.OutputFilePath, ...
     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
-    'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw',...
+    'UVAL', 'VVAL', 'RVAL',...
     'PASSNUMBER', ...
     'hasConverged', ...
     'FilePaths', 'JobFile');

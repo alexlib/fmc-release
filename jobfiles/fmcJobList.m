@@ -1,14 +1,12 @@
 function JOBLIST = fmcJobList()
 
 % Job options
-% DefaultJob.JobOptions.NumberOfProcessors = 1;
-% DefaultJob.JobOptions.ImageRotationAngle = 0;
 DefaultJob.JobOptions.NumberOfPasses = 1;
 DefaultJob.JobOptions.SkipExisting = 0;
-% DefaultJob.JobOptions.ComparisonType = 'Eulerian';
 DefaultJob.JobOptions.StartFromExistingField = 0;
 DefaultJob.JobOptions.StartPass = 1;
-DefaultJob.JobOptions.RunCompiled = 1;
+DefaultJob.JobOptions.RunCompiled = true;
+DefaultJob.JobOptions.MaskImages = true;
 
 % Image parameters
 DefaultJob.Parameters.Images.Directory = '~/Desktop/piv_images/raw';
@@ -143,7 +141,8 @@ SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 64;
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 64;
 SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
-SegmentItem.Parameters.Processing(1).Correlation.Method = 'scc';
+SegmentItem.Parameters.Processing.Iterative.Method = 'deform';
+SegmentItem.Parameters.Processing(1).Correlation.Method = 'fmc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
 SegmentItem.Parameters.Processing(1).Iterative.MaxIterations = 2;
@@ -154,10 +153,8 @@ SegmentItem.Parameters.Processing(2).Grid.Spacing.Y = 16;
 SegmentItem.Parameters.Processing(2).InterrogationRegion.Height = 64;
 SegmentItem.Parameters.Processing(2).InterrogationRegion.Width = 64;
 
-
 % Add to job list
 JOBLIST(1) = SegmentItem;
-
 
 
 end
