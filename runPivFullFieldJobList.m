@@ -151,12 +151,12 @@ for n = 1 : number_of_jobs
             % but not compiling the codes before hand,
             % so it comiples them if there's an error.
             % % % % % % % % % % % % % % % % % % %
-            try
+%             try
                 pivFullField(FilePaths, JobFile);
-            catch
-                compile_all
-                pivFullField(FilePaths, JobFile);
-            end
+%             catch
+%                 compile_all
+%                 pivFullField(FilePaths, JobFile);
+%             end
                 
              % % % % % % % % % % % % % % % % % % % 
             

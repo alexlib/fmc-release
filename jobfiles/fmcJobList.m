@@ -5,8 +5,7 @@ DefaultJob.JobOptions.NumberOfPasses = 1;
 DefaultJob.JobOptions.SkipExisting = 0;
 DefaultJob.JobOptions.StartFromExistingField = 0;
 DefaultJob.JobOptions.StartPass = 1;
-DefaultJob.JobOptions.RunCompiled = true;
-DefaultJob.JobOptions.MaskImages = true;
+DefaultJob.JobOptions.RunCompiled = false;
 
 % Image parameters
 DefaultJob.Parameters.Images.Directory = '~/Desktop/piv_images/raw';
@@ -25,6 +24,11 @@ DefaultJob.Parameters.Images.ColorChannel = 1;
 DefaultJob.Parameters.Vectors.Directory = '~/Desktop/piv_images/vect';
 DefaultJob.Parameters.Vectors.BaseName = 'frame_';
 DefaultJob.Parameters.Vectors.NumberOfDigits = 6;
+
+% Masking
+DefaultJob.Parameters.Mask.MaskGrid = false;
+DefaultJob.Parameters.Mask.MaskImage = true;
+DefaultJob.Parameters.Mask.Path = '~/Desktop/mask.tif';
 
 % Grid parameters
 % These are the same for all processing methods
@@ -141,8 +145,8 @@ SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 64;
 SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 64;
 SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
-SegmentItem.Parameters.Processing.Iterative.Method = 'deform';
-SegmentItem.Parameters.Processing(1).Correlation.Method = 'fmc';
+SegmentItem.Parameters.Processing.Iterative.Method = 'dwo';
+SegmentItem.Parameters.Processing(1).Correlation.Method = 'rpc';
 SegmentItem.Parameters.Processing(1). ...
     InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
 SegmentItem.Parameters.Processing(1).Iterative.MaxIterations = 2;

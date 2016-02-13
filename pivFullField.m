@@ -29,6 +29,33 @@ for p = 1 : number_of_passes
     JOBFILE.Parameters.Processing(p).Images.Width  = imageWidth;
 end
 
+% Loads the mask or create a mask of ones if no mask is specified.
+mask_grid = JOBFILE.Parameters.Mask.MaskGrid;
+mask_images = JOBFILE.Parameters.Mask.MaskImage;
+
+% Load the mask if either type of masking is specified.
+mask_path = JOBFILE.Parameters.Mask.Path;
+
+% Create the grid mask if requested
+if mask_grid
+    grid_mask = double(imread(mask_path));
+else
+    grid_mask = ones(imageHeight, imageWidth);
+end
+
+% Create the image mask if requested
+if mask_images
+    image_mask = double(imread(mask_path));
+else
+    image_mask = ones(imageHeight, imageWidth);
+end
+    
+% Mask the images if requested
+if mask_images
+    image1_import = image1_import .* repmat(image_mask, [1, 1, num_channels]);
+    image2_import = image2_import .* repmat(image_mask, [1, 1, num_channels]);
+end
+
 % Extract the appropriate color channel. channel
 if num_channels > 1
     % Make sure the color channel is specified
@@ -254,8 +281,7 @@ while thisPass <= number_of_passes;
     % Make sure the grid buffer is at least half the size of the interrogation region
     gridBufferY = JobFile.Parameters.Processing(p).Grid.Buffer.Y;
     gridBufferX = JobFile.Parameters.Processing(p).Grid.Buffer.X;
-
-
+    
     %% This section handles modifying the images and creating or
     % modifying the grid based on previous iterations if those options 
     % are specified (e.g., image deformation, discrete window offset)
@@ -363,7 +389,8 @@ while thisPass <= number_of_passes;
          % Generate the list of coordinates that specifies the (X, Y) 
          % centers of all of the interrogation regions 
         [ gx{p}, gy{p} ] = gridImage([imageHeight, imageWidth], ...
-            [gridSpacingY gridSpacingX], gridBufferY, gridBufferX);
+            [gridSpacingY gridSpacingX], ...
+            gridBufferY, gridBufferX, grid_mask);
    
         % If this is the first pass or if DWO is not specified, then keep
         % the original grid points.

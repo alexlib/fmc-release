@@ -13,9 +13,12 @@ function PEAK_MATRIX = locate_correlation_peaks(SPATIAL_CORRELATION)
 % OUTPUTS:
 %	PEAK_MATRIX = [M x N] matrix containing the locations and magnitudes of the identified peaks.
 
-
-
-%Locate peaks using imregionalmax
-PEAK_MATRIX = imregionalmax(SPATIAL_CORRELATION) .* SPATIAL_CORRELATION;
+% Check if the correlation was identically zero
+if abs(max(SPATIAL_CORRELATION(:))) ~= 0
+    % Locate peaks using imregionalmax
+    PEAK_MATRIX = imregionalmax(SPATIAL_CORRELATION) .* SPATIAL_CORRELATION;
+else
+    PEAK_MATRIX = zeros(size(SPATIAL_CORRELATION));   
+end
 
 end

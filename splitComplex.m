@@ -6,6 +6,9 @@ function [SPECTRAL_PHASE, SPECTRAL_MAGNITUDE] = splitComplex(COMPLEX_CROSS_CORRE
 % in the frequency domain
 SPECTRAL_MAGNITUDE = sqrt(COMPLEX_CROSS_CORRELATION_PLANE .* conj(COMPLEX_CROSS_CORRELATION_PLANE));
 
+% Set zeros to ones
+SPECTRAL_MAGNITUDE(SPECTRAL_MAGNITUDE == 0) = 1;
+
 % Divide cross correlation by its nonzero magnitude to extract the phase information
 SPECTRAL_PHASE = COMPLEX_CROSS_CORRELATION_PLANE ./ SPECTRAL_MAGNITUDE;
 
