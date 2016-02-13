@@ -29,7 +29,7 @@ for p = 1 : number_of_passes
     JOBFILE.Parameters.Processing(p).Images.Width  = imageWidth;
 end
 
-% Extract the channel
+% Extract the appropriate color channel. channel
 if num_channels > 1
     % Make sure the color channel is specified
     if isfield(JOBFILE.Parameters.Images, 'ColorChannel')
@@ -165,7 +165,8 @@ while thisPass <= number_of_passes;
         fmcDifferenceMethod = 1;
     end
 
-    % Image resampling parameters, specific to FMC processing.
+    % Image resampling parameters
+    % This is specific to FMC processing.
     numberOfRings = JobFile.Parameters.Processing(p).Correlation.FMC.NumberOfRings;
     numberOfWedges = JobFile.Parameters.Processing(p).Correlation.FMC.NumberOfWedges;
     rMin = JobFile.Parameters.Processing(p).Correlation.FMC.MinimumRadius;
@@ -204,17 +205,8 @@ while thisPass <= number_of_passes;
         fmiWindow = gaussianWindowFilter([numberOfWedges, numberOfRings], fmiWindowSize, 'fraction');
     end
     
-    
-    
-    %%
-
-    % Correlation parameters
-    correlationMethod = JobFile.Parameters.Processing(p).Correlation.Method;
-    
-    % Determine which correlation type to use. Fmc or RPC
-    isFmc = ~isempty(regexpi(correlationMethod, 'fmc'));
-    isRpc = ~isempty(regexpi(correlationMethod, 'rpc'));
-    isScc = ~isempty(regexpi(correlationMethod, 'scc'));
+    %% This section reads and specifies some more parameters
+    % that aren't specific to FMC.
     
     % RPC diameters
     spatialRPCDiameter = JobFile.Parameters.Processing(p).Correlation.RPC.FilterDiameter;
@@ -263,22 +255,36 @@ while thisPass <= number_of_passes;
     gridBufferY = JobFile.Parameters.Processing(p).Grid.Buffer.Y;
     gridBufferX = JobFile.Parameters.Processing(p).Grid.Buffer.X;
 
+
+    %% This section handles modifying the images and creating or
+    % modifying the grid based on previous iterations if those options 
+    % are specified (e.g., image deformation, discrete window offset)
+    
     % Iterative method (DWO, Deform, etc)
     iterative_method = JobFile.Parameters.Processing(p).Iterative.Method;
     
     % Check what iterative method is requested (if any)
-    if regexpi(iterative_method, 'def')
+    if regexpi(iterative_method, 'def') % This is the case for deform.
         doImageDeformation = true;
         doDiscreteWindowOffset = false;
-    elseif regexpi(iterative_method, 'dwo')
+    elseif regexpi(iterative_method, 'dwo') % Case for discrete window offset
         doImageDeformation = false;
         doDiscreteWindowOffset = true;
-    else
+    else % Case for neither DWO nor Deform
         doImageDeformation = false;
         doDiscreteWindowOffset = false;
     end
     
-    % Smooth the field if requested. 
+    % These lines determine what velocity field to use
+    % as the source-field for deform, DWO, etc.
+    % Smoothing happens here. An important
+    % implication of smoothing happening here (and
+    % not saving the smoothed fields as their own variables)
+    % is that smoothed data are not saved to disk. 
+    % This is so that the user never gets a field that's unintentinoally
+    % smoothed; it kind of forces you to look at the unsmoothed data.
+    % Smoothing is easy in post processing. However, the smoothing
+    % still takes place in the code so that deform, and DWO are stable.
     if p > 1
         % Smooth field if specified
         if doSmoothing
@@ -294,7 +300,10 @@ while thisPass <= number_of_passes;
         end
     end
     
-    % Check deformation flag
+    % Perform image deformation if requested.
+    % The p > 1 statement says to only deform the images
+    % (i.e., don't try to smooth before any
+    % velocities have been calculated).
     if p > 1 && doImageDeformation        
  
         % Create the pixel coordinates.
@@ -385,7 +394,10 @@ while thisPass <= number_of_passes;
     regionMatrix2 = extractSubRegions(image2, ...
         [regionHeight, regionWidth], gx_02(:), gy_02(:));
     
-    % Preallocate memory for the vectors to hold the estimates of translation, rotation, and scaling.
+    % Preallocate memory for the vectors to hold the 
+    % estimates of translation, rotation, and scaling.
+    % Some of these don't get saved right now; they're here
+    % in case we decide to change this.
     estimatedTranslationY = zeros(nRegions, 1);
     estimatedTranslationX = zeros(nRegions, 1);
     estimatedRotation = zeros(nRegions, 1); 
@@ -407,21 +419,29 @@ while thisPass <= number_of_passes;
     DX = zeros(nRegions, 1);
     DY = zeros(nRegions, 1);
     
-    % Orientation angle of the best-fit ellipse to the 
-    % spatial correlation peaks
-    peak_angle = zeros(nRegions, 1);
-    
-    % Eccentricity of the spatial peaks
-    peak_eccentricity = zeros(nRegions, 1);
-    
     % Start a timer
     t = tic;
     
-    %%
+    %% This section does the correlations for the current and iteration.
+    
+    % Read the correlation method
+    correlationMethod = ...
+        JobFile.Parameters.Processing(p).Correlation.Method;
+    
+    % Determine which correlation type to use (FMC, RPC, SCC)
+    isFmc = ~isempty(regexpi(correlationMethod, 'fmc'));
+    isRpc = ~isempty(regexpi(correlationMethod, 'rpc'));
+    isScc = ~isempty(regexpi(correlationMethod, 'scc'));
     
     % Do all the correlations for the image.
     parfor k = 1 : nRegions
         
+        % This line prints to screen for every single
+        % correlation; it's useful if correlations are 
+        % intensive and taking a long time, and you want 
+        % to keep tabs on what's happening rather than 
+        % just staring at a blank screen. Uncomment it if you
+        % want a more "verbose" output.
 %         fprintf(1, 'On region %d of %d\n', k, nRegions);
         
         % Extract the subregions from the subregion stacks.
@@ -434,12 +454,12 @@ while thisPass <= number_of_passes;
             subRegion2 = zero_mean_region(subRegion2);
         end
                 
-        % Perform FMC processing. 
+        % Perform FMC correlation. 
         if isFmc
             % Perform the FMC correlation.
             [estimatedTranslationY(k), estimatedTranslationX(k),...
             estimatedRotation(k), estimatedScaling(k), ...
-            fmcPeakRatio(k), spatialPeakRatio(k), spatialPeakHeight(k), spatialPeakDiameter(k)] = ...
+            fmcPeakRatio(k), spatialPeakRatio(k)] = ...
             ...
             FMC(subRegion1, subRegion2, spatialWindow, imageSpectralFilter,...
             fmiWindow, fmiSpectralFilter, ...
@@ -447,12 +467,12 @@ while thisPass <= number_of_passes;
             spectrum_height, spectrum_width,...
             xLP, yLP, rMin, rMax, fmcDifferenceMethod, COMPILED);
         
-        % Perform RPC analysis 
+        % Perform RPC correlation 
         % The zero in this input means "Do not search multiple peaks,"
         % i.e., use only the primary peak.
         elseif isRpc
             [estimatedTranslationY(k), estimatedTranslationX(k), ...
-                rpcPlane, spatialPeakHeight(k), spatialPeakDiameter(k)]...
+                rpcPlane]...
                 = RPC(...
                 spatialWindow .* subRegion1, ...
                 spatialWindow .* subRegion2,...
@@ -467,8 +487,7 @@ while thisPass <= number_of_passes;
 
         % Perform SCC analysis.
         elseif isScc
-            [estimatedTranslationY(k), estimatedTranslationX(k), ...
-                sccPlane]...
+            [estimatedTranslationY(k), estimatedTranslationX(k)]...
                 = SCC(...
                 spatialWindow .* subRegion1, ...
                 spatialWindow .* subRegion2,...
@@ -476,13 +495,9 @@ while thisPass <= number_of_passes;
         end
         
     end % end for k = 1 : nRegions
-
-    % Calculate the peak diameter magnitude
-    peak_diameter = reshape(sqrt(DX.^2 + DY.^2), numRows, numColumns);
         
     % Inform the user
-    disp(['Correlation times (pass ' num2str(p) '): ' num2str(toc(t)) ' sec' ]);
-    disp('');
+    fprintf('Correlation times (pass %d): %0.2f seconds.\n', p, toc(t));
     
     % Reshape the raw measured displacements into matrices.
     tx_raw{p} = reshape(estimatedTranslationX, numRows, numColumns);
@@ -677,7 +692,7 @@ end
 save(FilePaths.OutputFilePath, ...
     'X', 'Y', 'U', 'V', 'R', 'S', 'IS_OUTLIER',...
     'UVAL', 'VVAL', 'RVAL', 'tx_raw', 'ty_raw',...
-    'FMC_PEAK_RATIO', 'SPATIAL_PEAK_RATIO', 'PASSNUMBER', ...
+    'PASSNUMBER', ...
     'hasConverged', ...
     'FilePaths', 'JobFile');
 
