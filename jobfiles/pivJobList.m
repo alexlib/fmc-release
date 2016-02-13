@@ -1,4 +1,4 @@
-function JOBLIST = fmcJobList()
+function JOBLIST = pivJobList()
 
 % Load the defaults from a separate file.
 % This file contains all of the parameters
