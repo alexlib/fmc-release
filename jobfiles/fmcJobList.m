@@ -1,162 +1,94 @@
 function JOBLIST = fmcJobList()
 
-% Job options
-DefaultJob.JobOptions.NumberOfPasses = 1;
-DefaultJob.JobOptions.SkipExisting = 0;
-DefaultJob.JobOptions.StartFromExistingField = 0;
-DefaultJob.JobOptions.StartPass = 1;
-DefaultJob.JobOptions.RunCompiled = true;
+% Load the defaults from a separate file.
+% This file contains all of the parameters
+% necessary to run a job, but many of them 
+% can stand to be hidden from the user
+% in most cases. Feel free to tinker with it 
+% and swee what happens.
+Job = DefaultJob;
 
-% Image parameters
-DefaultJob.Parameters.Images.Directory = '~/Desktop/piv_images/raw';
-DefaultJob.Parameters.Images.BaseName = 'lambvortex_h1024_w1024_';
-DefaultJob.Parameters.Images.Extension = '.tiff';
-DefaultJob.Parameters.Images.NumberOfDigits = 6;
-DefaultJob.Parameters.Images.CorrelationStep = 3;
+% Default processing parameters. 
+% This is useful if you want to do a bunch
+% of jobs that all use the same (or similar) processing
+% and you don't want to modify everything every time.
+default_processing = Job.Parameters.Processing(1);
+
+% Input file parameters
+Job.Parameters.Images.Directory = '~/Desktop/piv_images/raw';
+Job.Parameters.Images.BaseName = 'lambvortex_h1024_w1024_';
+Job.Parameters.Images.Extension = '.tiff';
+Job.Parameters.Images.NumberOfDigits = 6;
+
+% Output file parameters parameters
+Job.Parameters.Vectors.Directory = '~/Desktop/piv_images/vect';
+Job.Parameters.Vectors.BaseName = 'frame_';
+Job.Parameters.Vectors.NumberOfDigits = 6;
 
 % Start and end images
-DefaultJob.Parameters.Images.Start = 1;
-DefaultJob.Parameters.Images.End = 1;
-DefaultJob.Parameters.Images.FrameStep = 1;
-DefaultJob.Parameters.Images.ColorChannel = 1;
-
-% Output (vector) parameters
-DefaultJob.Parameters.Vectors.Directory = '~/Desktop/piv_images/vect';
-DefaultJob.Parameters.Vectors.BaseName = 'frame_';
-DefaultJob.Parameters.Vectors.NumberOfDigits = 6;
+Job.Parameters.Images.Start = 1;
+Job.Parameters.Images.End = 1;
+Job.Parameters.Images.FrameStep = 1;
+Job.Parameters.Images.CorrelationStep = 3;
 
 % Masking
-DefaultJob.Parameters.Mask.DoMasking = true;
-DefaultJob.Parameters.Mask.Path = '~/Desktop/mask.tif';
+Job.Parameters.Mask.DoMasking = true;
+Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
 
-% Grid parameters
-% These are the same for all processing methods
-DefaultJob.Parameters.Processing.Grid.Spacing.X = 32; % Horizontal spacing between grid points (pixels)
-DefaultJob.Parameters.Processing.Grid.Spacing.Y = 32; % Vertical spacing between grid points (pixels)
-DefaultJob.Parameters.Processing.Grid.Buffer.Y = [32 32]; % Top and bottom grid buffer (pixels)
-DefaultJob.Parameters.Processing.Grid.Buffer.X = [32 32]; % Left and right grid buffer (pixels)
+% Number of passes for this job.
+% This will override the number
+% of passes contained in the jobfile; it's done
+% this way so that you can quickly truncate
+% the number of passes to perform without deleting
+% any text from this file.
+Job.JobOptions.NumberOfPasses = 2;
 
-% Interrogation Region Parameters
-% These are the same for all processing methods
-DefaultJob.Parameters.Processing.InterrogationRegion.Height = 128;
-DefaultJob.Parameters.Processing.InterrogationRegion.Width = 128;
-DefaultJob.Parameters.Processing.InterrogationRegion.SpatialWindowFraction = [0.5 0.5];
-DefaultJob.Parameters.Processing.InterrogationRegion.ZeroMeanRegion = 1;
+% Processing parameters for the first pass.
+Job.Parameters.Processing(1) = default_processing;
 
-% FMC options
-DefaultJob.Parameters.Processing.InterrogationRegion.FMIWindowSize = [2, 2, 0];
-DefaultJob.Parameters.Processing.InterrogationRegion.FMIWindowType = 'hann1';
+% Correlation type to use
+Job.Parameters.Processing(1).Correlation.Method = 'rpc';
 
-% Correlation parameters
-% Correlation type
-DefaultJob.Parameters.Processing.Correlation.Method = 'rpc'; 
+% Grid and region parameters.
+% Region height and width refer to the un-windowed
+% interrogation region, i.e., double what Prana 
+% calls the "window resolution."
+Job.Parameters.Processing(1).InterrogationRegion.Height = 64;
+Job.Parameters.Processing(1).InterrogationRegion.Width = 64;
 
-% Peak fit method ('least-squares', ...)
-DefaultJob.Parameters.Processing.Correlation.PeakFitMethod =...
-    '3-point';
+% Grid spacing
+Job.Parameters.Processing(1).Grid.Spacing.X = 16;
+Job.Parameters.Processing(1).Grid.Spacing.Y = 16;
 
-% FMC parameters
-% FMC Image resampling parameters
-DefaultJob.Parameters.Processing.Correlation.FMC.NumberOfRings = 64;
-DefaultJob.Parameters.Processing.Correlation.FMC.NumberOfWedges = 256;
-DefaultJob.Parameters.Processing.Correlation.FMC.MinimumRadius = 2;
+% Post processing
+Job.Parameters.Processing(1).Smoothing.DoSmoothing = true;
+Job.Parameters.Processing(1).Validation.DoValidation = true;
 
-% FMC parameters for windowing the FMI log polar images.
-DefaultJob.Parameters.Processing.Correlation.FMC.FMIWindowSize = [2, 2, 0];
-DefaultJob.Parameters.Processing.Correlation.FMC.FMIWindowType = 'hann1';
+% Iterative scheme
+Job.Parameters.Processing.Iterative.Method = 'deform';
+Job.Parameters.Processing(1).Iterative.MaxIterations = 5;
 
-% RPC spectral filter diameter for the FMC correlation (pixels)
-DefaultJob.Parameters.Processing.Correlation.FMC.FilterDiameter = 3.3; 
-DefaultJob.Parameters.Processing.Correlation.FMC.FMCFilterType = 'relative';
-
-% Spatial RPC diameter
-DefaultJob.Parameters.Processing.Correlation.RPC.FilterDiameter = 2.8;
-
-
-% FFT Dimensions.
-% Is this specific to FMC? 
-DefaultJob.Parameters.Processing.FFTSize = [128, 128];
-
-% Search multiple peaks?
-DefaultJob.Parameters.Processing.MultiPeak = false;
-
-% Get rid of this?
-DefaultJob.Parameters.Processing.FMC.FmcDifferenceMethod = 'forward';
-
-%%%%%%%%% 
-
-% Iterative method paramters (DWO and deform)
-% Method can be 'deform', 'dwo', or 'none'
-DefaultJob.Parameters.Processing.Iterative.Method = 'dwo';
-
-% Attempt to converge the iterative method?
-DefaultJob.Parameters.Processing.Iterative.Converge = true;
-
-% Maximum number of iterations to use for the pass.
-DefaultJob.Parameters.Processing.Iterative.MaxIterations = 4;
-
-% Convergence criterion for the pass' iterative method
-% (average change in both components of the vector magnitude
-% between iterations)
-DefaultJob.Parameters.Processing.Iterative.ConvergenceCriterion = 0.01;
-
-%%%%%%%%%%%%%
-
-% Smoothing parameters
-DefaultJob.Parameters.Processing.Smoothing.DoSmoothing = false;
-DefaultJob.Parameters.Processing.Smoothing.KernelDiameter = 7; 
-DefaultJob.Parameters.Processing.Smoothing.KernelGaussianStdDev = 1;
-
-% Universal Outlier Detection Parameters
-DefaultJob.Parameters.Processing.Validation.DoValidation = true;
-DefaultJob.Parameters.Processing.Validation.UodStencilRadius = 1;
-DefaultJob.Parameters.Processing.Validation.UodThreshold = 3;
-DefaultJob.Parameters.Processing.Validation.UodExpectedDifference = [0.1, 0.1];
-DefaultJob.Parameters.Processing.Validation.UodMedianThreshold = [3, 2];
-DefaultJob.Parameters.Processing.Validation.UodWindowSize = [3, 3; 3, 3];
-DefaultJob.Parameters.Processing.Validation.UThresh = [-inf, inf];
-DefaultJob.Parameters.Processing.Validation.VThresh = [-inf, inf];
-
-% Default Processing parameters
-defaultProcessing = DefaultJob.Parameters.Processing;
-
-% Job 1, Pass 1
-
-% This copies the default processing to the current "segment,"
-% whose parameters can be changed below.
-SegmentItem = DefaultJob;
-
-% Modify some parameters
-SegmentItem.Parameters.Images.CorrelationStep = 3;
-SegmentItem.JobOptions.NumberOfPasses = 1;
-
-% Pass 1
-SegmentItem.Parameters.Processing(1) = defaultProcessing;
-SegmentItem.Parameters.Processing(1).Grid.Spacing.X = 16;
-SegmentItem.Parameters.Processing(1).Grid.Spacing.Y = 16;
-SegmentItem.Parameters.Processing(1).Grid.Buffer.Y = [0, 0];
-SegmentItem.Parameters.Processing(1).Grid.Buffer.X = [0, 0];
-SegmentItem.Parameters.Processing(1).InterrogationRegion.Height = 64;
-SegmentItem.Parameters.Processing(1).InterrogationRegion.Width = 64;
-SegmentItem.Parameters.Processing(1).Smoothing.DoSmoothing = 1;
-SegmentItem.Parameters.Processing.Iterative.Method = 'deform';
-SegmentItem.Parameters.Processing(1).Correlation.Method = 'fmc';
-SegmentItem.Parameters.Processing(1). ...
-    InterrogationRegion.SpatialWindowFraction = [0.50 0.50];
-SegmentItem.Parameters.Processing(1).Iterative.MaxIterations = 5;
-
-
+% % Make the second pass!
 % Copy the parameters from the first pass to a new pass.
-SegmentItem.Parameters.Processing(2) = SegmentItem.Parameters.Processing(1);
+Job.Parameters.Processing(2) = Job.Parameters.Processing(1);
 
 % Modify some parameters for the second pass.
-SegmentItem.Parameters.Processing(2).Grid.Spacing.X = 16;
-SegmentItem.Parameters.Processing(2).Grid.Spacing.Y = 16;
-SegmentItem.Parameters.Processing(2).InterrogationRegion.Height = 64;
-SegmentItem.Parameters.Processing(2).InterrogationRegion.Width = 64;
+Job.Parameters.Processing(2).Grid.Spacing.X = 8;
+Job.Parameters.Processing(2).Grid.Spacing.Y = 8;
+Job.Parameters.Processing(2).InterrogationRegion.Height = 32;
+Job.Parameters.Processing(2).InterrogationRegion.Width  = 32;
 
 % Add the segment to job list
-JOBLIST(1) = SegmentItem;
+JOBLIST(1) = Job;
+
+% Add a second job to the job list
+% Change the processing methods to FMC
+Job.Parameters.Processing(1).Correlation.Method = 'fmc';
+Job.Parameters.Processing(2).Correlation.Method = 'fmc';
+
+% Append the job to the job list.
+JOBLIST(end + 1) = Job;
+
 
 
 end

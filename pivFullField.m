@@ -506,7 +506,7 @@ while thisPass <= number_of_passes;
     end % end for k = 1 : nRegions
         
     % Inform the user
-    fprintf('Correlation times (pass %d): %0.2f seconds.\n', p, toc(t));
+    fprintf('Correlation time: %0.2f seconds.\n', p, toc(t));
     
     % Reshape the raw measured displacements into matrices.
     tx_raw = reshape(estimatedTranslationX, numRows, numColumns);
