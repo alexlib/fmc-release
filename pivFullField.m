@@ -487,11 +487,7 @@ while thisPass <= number_of_passes;
                     imageSpectralFilter, subpixel_peak_fit_method_numerical); 
 
                 % Measure the peak height ratio
-                if COMPILED
-                    spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
-                else
-                    spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
-                end
+                spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
 
             % Perform SCC analysis.
             elseif isScc
