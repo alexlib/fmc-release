@@ -145,19 +145,10 @@ for n = 1 : number_of_jobs
             
             % Perform the correlations on the image pair.
             % This is This is the call to the main code!
-            % The try-catch loop assumes that
-            % an easy way to break the processing
-            % is to specify running the compiled codes
-            % but not compiling the codes before hand,
-            % so it comiples them if there's an error.
-            % % % % % % % % % % % % % % % % % % %
-            try
-                pivFullField(FilePaths, JobFile);
-            catch
-                compile_all
-                pivFullField(FilePaths, JobFile);
-            end
-                
+            % % % % % % % % % % % % % % % % % % %             
+            pivFullField(FilePaths, JobFile);
+
+ 
              % % % % % % % % % % % % % % % % % % % 
             
             % Inform the user that the job as completed
