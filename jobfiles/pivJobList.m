@@ -23,24 +23,24 @@ Job = DefaultJob;
 default_processing = Job.Parameters.Processing(1);
 
 % Input file parameters
-Job.Parameters.Images.Directory = '~/Desktop/piv_images/raw';
-Job.Parameters.Images.BaseName = 'lambvortex_h1024_w1024_';
-Job.Parameters.Images.Extension = '.tiff';
-Job.Parameters.Images.NumberOfDigits = 6;
+Job.Parameters.Images.Directory = '~/Desktop/jhu_buyoant_turbulence/raw';
+Job.Parameters.Images.BaseName = 'jhu_buoy_turb_';
+Job.Parameters.Images.Extension = '.tif';
+Job.Parameters.Images.NumberOfDigits = 2;
 
 % Output file parameters parameters
-Job.Parameters.Vectors.Directory = '~/Desktop/piv_images/vect';
+Job.Parameters.Vectors.Directory = '~/Desktop/jhu_buyoant_turbulence/vect';
 Job.Parameters.Vectors.BaseName = 'frame_';
-Job.Parameters.Vectors.NumberOfDigits = 6;
+Job.Parameters.Vectors.NumberOfDigits = 2;
 
 % Start and end images
-Job.Parameters.Images.Start = 1;
-Job.Parameters.Images.End = 1;
+Job.Parameters.Images.Start = 5;
+Job.Parameters.Images.End = 5;
 Job.Parameters.Images.FrameStep = 1;
-Job.Parameters.Images.CorrelationStep = 3;
+Job.Parameters.Images.CorrelationStep = 1;
 
 % Masking
-Job.Parameters.Mask.DoMasking = true;
+Job.Parameters.Mask.DoMasking = false;
 Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
 
 % Number of passes for this job.
@@ -49,7 +49,7 @@ Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
 % this way so that you can quickly truncate
 % the number of passes to perform without deleting
 % any text from this file.
-Job.JobOptions.NumberOfPasses = 2;
+Job.JobOptions.NumberOfPasses = 1;
 
 % Processing parameters for the first pass.
 Job.Parameters.Processing(1) = default_processing;
@@ -69,12 +69,12 @@ Job.Parameters.Processing(1).Grid.Spacing.X = 16;
 Job.Parameters.Processing(1).Grid.Spacing.Y = 16;
 
 % Post processing
-Job.Parameters.Processing(1).Smoothing.DoSmoothing = true;
-Job.Parameters.Processing(1).Validation.DoValidation = true;
+Job.Parameters.Processing(1).Smoothing.DoSmoothing = false;
+Job.Parameters.Processing(1).Validation.DoValidation = false;
 
 % Iterative scheme
-Job.Parameters.Processing.Iterative.Method = 'deform';
-Job.Parameters.Processing(1).Iterative.MaxIterations = 5;
+Job.Parameters.Processing.Iterative.Method = 'none';
+Job.Parameters.Processing(1).Iterative.MaxIterations = 1;
 
 % % Make the second pass!
 % Copy the parameters from the first pass to a new pass.
@@ -91,8 +91,8 @@ JOBLIST(1) = Job;
 
 % Add a second job to the job list
 % Change the processing methods to FMC
-Job.Parameters.Processing(1).Correlation.Method = 'fmc';
-Job.Parameters.Processing(2).Correlation.Method = 'fmc';
+Job.Parameters.Processing(1).Correlation.Method = 'scc';
+Job.Parameters.Processing(2).Correlation.Method = 'scc';
 
 % Append the job to the job list.
 JOBLIST(end + 1) = Job;

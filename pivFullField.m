@@ -278,6 +278,9 @@ while thisPass <= number_of_passes;
     % Iterative method (DWO, Deform, etc)
     iterative_method = JobFile.Parameters.Processing(p).Iterative.Method;
     
+    % This determines whether DWO convergence iterations were specified
+    converge_iterative_method = JobFile.Parameters.Processing(p).Iterative.Converge;
+    
     % Check what iterative method is requested (if any)
     if regexpi(iterative_method, 'def') % This is the case for deform.
         doImageDeformation = true;
@@ -288,6 +291,10 @@ while thisPass <= number_of_passes;
     else % Case for neither DWO nor Deform
         doImageDeformation = false;
         doDiscreteWindowOffset = false;
+        
+        % Don't try to converge anything if
+        % no iterative method was specified.
+        converge_iterative_method = false;
     end
     
     % These lines determine what velocity field to use
@@ -564,9 +571,6 @@ while thisPass <= number_of_passes;
     % If the velocity estimate has converged, go on
     % to the next user-specified pass. Otherwise, 
     % repeat the previous pass. 
-    
-    % This determines whether DWO convergence iterations were specified
-    converge_iterative_method = JobFile.Parameters.Processing(p).Iterative.Converge;
     
     % If DWO convergence was specified (and at least one pass has
     % completed), then check the other parameters regarding convergence
