@@ -23,21 +23,21 @@ Job = DefaultJob;
 default_processing = Job.Parameters.Processing(1);
 
 % Input file parameters
-Job.Parameters.Images.Directory = '/Users/matthewgiarra/Desktop/test_images/raw';
-Job.Parameters.Images.BaseName = 'Img_';
-Job.Parameters.Images.Extension = '.tif';
-Job.Parameters.Images.NumberOfDigits = 3;
+Job.Parameters.Images.Directory = '~/Desktop/vortex_images/raw';
+Job.Parameters.Images.BaseName = 'lambvortex_h1024_w1024_';
+Job.Parameters.Images.Extension = '.tiff';
+Job.Parameters.Images.NumberOfDigits = 6;
 
 % Output file parameters parameters
-Job.Parameters.Vectors.Directory = '/Users/matthewgiarra/Desktop/test_images/vect';
-Job.Parameters.Vectors.BaseName = 'fmc_proc2_';
-Job.Parameters.Vectors.NumberOfDigits = 3;
+Job.Parameters.Vectors.Directory = '~/Desktop/vortex_images/vect';
+Job.Parameters.Vectors.BaseName = 'lambvortex_h1024_w1024_';
+Job.Parameters.Vectors.NumberOfDigits = 6;
 
 % Start and end images
-Job.Parameters.Images.Start = 15;
-Job.Parameters.Images.End = 15;
+Job.Parameters.Images.Start = 1;
+Job.Parameters.Images.End = 1;
 Job.Parameters.Images.FrameStep = 1;
-Job.Parameters.Images.CorrelationStep = 1;
+Job.Parameters.Images.CorrelationStep = 3;
 
 % Masking
 Job.Parameters.Mask.DoMasking = false;
@@ -61,12 +61,12 @@ Job.Parameters.Processing(1).Correlation.Method = 'scc';
 % Region height and width refer to the un-windowed
 % interrogation region, i.e., double what Prana 
 % calls the "window resolution."
-Job.Parameters.Processing(1).InterrogationRegion.Height = 96;
-Job.Parameters.Processing(1).InterrogationRegion.Width = 96;
+Job.Parameters.Processing(1).InterrogationRegion.Height = 64;
+Job.Parameters.Processing(1).InterrogationRegion.Width = 64;
 
 % Grid spacing
-Job.Parameters.Processing(1).Grid.Spacing.X = 24;
-Job.Parameters.Processing(1).Grid.Spacing.Y = 24;
+Job.Parameters.Processing(1).Grid.Spacing.X = 16;
+Job.Parameters.Processing(1).Grid.Spacing.Y = 16;
 
 % Post processing
 Job.Parameters.Processing(1).Smoothing.DoSmoothing = false;
@@ -76,18 +76,16 @@ Job.Parameters.Processing(1).Validation.DoValidation = false;
 Job.Parameters.Processing.Iterative.Method = 'none';
 Job.Parameters.Processing(1).Iterative.MaxIterations = 1;
 
-% % Make the second pass!
-% Copy the parameters from the first pass to a new pass.
-Job.Parameters.Processing(2) = Job.Parameters.Processing(1);
-
-% Modify some parameters for the second pass.
-Job.Parameters.Processing(2).Grid.Spacing.X = 24;
-Job.Parameters.Processing(2).Grid.Spacing.Y = 24;
-Job.Parameters.Processing(2).InterrogationRegion.Height = 96;
-Job.Parameters.Processing(2).InterrogationRegion.Width  = 96;
 
 % Add the segment to job list
 JOBLIST(1) = Job;
+
+Job.Parameters.Processing(1).Correlation.Method = 'rpc';
+
+JOBLIST(end + 1) = Job;
+
+Job.Parameters.Processing(1).Correlation.Method = 'fmc';
+JOBLIST(end + 1) = Job;
 
 % % Add a second job to the job list
 % % Change the processing methods to FMC

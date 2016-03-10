@@ -447,9 +447,7 @@ while thisPass <= number_of_passes;
     isScc = ~isempty(regexpi(correlationMethod, 'scc'));
     
     % Do all the correlations for the image.
-    for k = 1 : nRegions
-        
-        fprintf(1, 'On region %d of %d\n', k, nRegions);
+    parfor k = 1 : nRegions
         
         % This line prints to screen for every single
         % correlation; it's useful if correlations are 
