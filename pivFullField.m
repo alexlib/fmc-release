@@ -449,6 +449,8 @@ while thisPass <= number_of_passes;
     % Do all the correlations for the image.
     for k = 1 : nRegions
         
+        fprintf(1, 'On region %d of %d\n', k, nRegions);
+        
         % This line prints to screen for every single
         % correlation; it's useful if correlations are 
         % intensive and taking a long time, and you want 
@@ -491,7 +493,8 @@ while thisPass <= number_of_passes;
                     = RPC(...
                     spatialWindow .* subRegion1, ...
                     spatialWindow .* subRegion2,...
-                    imageSpectralFilter, subpixel_peak_fit_method_numerical); 
+                    imageSpectralFilter, ...
+                    subpixel_peak_fit_method_numerical, COMPILED); 
 
                 % Measure the peak height ratio
                 spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
@@ -502,7 +505,7 @@ while thisPass <= number_of_passes;
                     = SCC(...
                     spatialWindow .* subRegion1, ...
                     spatialWindow .* subRegion2,...
-                    subpixel_peak_fit_method_numerical);
+                    subpixel_peak_fit_method_numerical, COMPILED);
             end
         end
         

@@ -1,5 +1,8 @@
 %#codegen
-function [peak_shift_rows, peak_shift_cols, corr_max_val, corr_peak_diameter, corr_max_val_delete] = subpixel(SPATIALCORRELATION, CORRELATION_WINDOW, Method, Peakswitch, COMPILED)
+function [peak_shift_rows, peak_shift_cols, corr_max_val, ...
+    corr_peak_diameter, corr_max_val_delete] = ...
+    subpixel(SPATIALCORRELATION, CORRELATION_WINDOW, ...
+    Method, Peakswitch, COMPILED)
 % This poorly commented function was taken from PRANA
 
 % try
@@ -206,7 +209,7 @@ else
                 % Log of correlation @ minus 1 
                 lCm1 = log(SPATIALCORRELATION( shift_locy , shift_locx-1 )* CORRELATION_WINDOW( shift_locy , shift_locx-1 ));
                 lC00 = log(SPATIALCORRELATION( shift_locy , shift_locx   )* CORRELATION_WINDOW( shift_locy , shift_locx   ));
-                % 
+                 
                 lCp1 = log(SPATIALCORRELATION( shift_locy , shift_locx+1 )* CORRELATION_WINDOW( shift_locy , shift_locx+1 ));
                 
                 if (2*(lCm1+lCp1-2*lC00)) == 0

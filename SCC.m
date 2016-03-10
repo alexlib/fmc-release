@@ -1,5 +1,5 @@
 function [TRANSLATION_Y, TRANSLATION_X, SPATIAL_SCC_PLANE] = ...
-    SCC(IMAGE1, IMAGE2, PEAK_FIT_METHOD)
+    SCC(IMAGE1, IMAGE2, PEAK_FIT_METHOD, COMPILED)
 % [TRANSLATION_Y, TRANSLATION_X, SPATIAL_SCC_PLANE, CORR_HEIGHT, CORR_DIAMETER] = SCC(IMAGE1, IMAGE2)
 %   calculates the robust phase correlation between two images
 %
@@ -20,6 +20,11 @@ function [TRANSLATION_Y, TRANSLATION_X, SPATIAL_SCC_PLANE] = ...
 %       See the function subpixel.m for details on this calculation.
 %   
 
+% Default to not running compiled codes.
+if nargin < 4
+    COMPILED = false;
+end
+
 % Calculate size of interrogation regions (homogeneous) (pixels)
 [height, width] = size(IMAGE1);
 
@@ -34,7 +39,7 @@ SPATIAL_SCC_PLANE = freq2space(fftshift(fftn(double(IMAGE2),...
 [TRANSLATION_Y, TRANSLATION_X, ~, ~] = ...
     subpixel(SPATIAL_SCC_PLANE, ...
     ones(size(SPATIAL_SCC_PLANE)), ...
-    PEAK_FIT_METHOD, 0, 1);
+    PEAK_FIT_METHOD, 0, COMPILED);
 
 end
 

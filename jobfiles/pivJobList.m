@@ -55,7 +55,7 @@ Job.JobOptions.NumberOfPasses = 1;
 Job.Parameters.Processing(1) = default_processing;
 
 % Correlation type to use
-Job.Parameters.Processing(1).Correlation.Method = 'fmc';
+Job.Parameters.Processing(1).Correlation.Method = 'scc';
 
 % Grid and region parameters.
 % Region height and width refer to the un-windowed
