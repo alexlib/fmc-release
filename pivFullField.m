@@ -156,7 +156,7 @@ while thisPass <= number_of_passes;
     spectrum_width  = fftSize(2);
     
     %% These things are specific to FMC, but run for all methods
-    % because of some issues with the parfor loop (I think).
+    % because of some issues with the for loop (I think).
     
     % Window sizes and types for FMC; this is specific to FMC.
     fmiWindowSize = ...
@@ -447,7 +447,7 @@ while thisPass <= number_of_passes;
     isScc = ~isempty(regexpi(correlationMethod, 'scc'));
     
     % Do all the correlations for the image.
-    parfor k = 1 : nRegions
+    for k = 1 : nRegions
         
         % This line prints to screen for every single
         % correlation; it's useful if correlations are 

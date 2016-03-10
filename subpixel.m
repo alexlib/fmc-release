@@ -2,6 +2,8 @@
 function [peak_shift_rows, peak_shift_cols, corr_max_val, corr_peak_diameter, corr_max_val_delete] = subpixel(SPATIALCORRELATION, CORRELATION_WINDOW, Method, Peakswitch, COMPILED)
 % This poorly commented function was taken from PRANA
 
+% try
+
 % Default to using compiled codes.
 if nargin < 5
     COMPILED = 1;
@@ -247,4 +249,13 @@ else
     end
 end
 
+% catch er
+%     fprintf(1, 'Error in subpixel.m:\n');
+%     fprintf(1, '%s\n', er.message);
+%     keyboard
+% end
+
 end
+
+
+

@@ -5,7 +5,7 @@ defaultJob.JobOptions.NumberOfPasses = 1;
 defaultJob.JobOptions.SkipExisting = 0;
 defaultJob.JobOptions.StartFromExistingField = 0;
 defaultJob.JobOptions.StartPass = 1;
-defaultJob.JobOptions.RunCompiled = true;
+defaultJob.JobOptions.RunCompiled = false;
 
 % Image parameters
 defaultJob.Parameters.Images.Directory = '~/Desktop/piv_images/raw';

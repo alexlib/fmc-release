@@ -23,25 +23,25 @@ Job = DefaultJob;
 default_processing = Job.Parameters.Processing(1);
 
 % Input file parameters
-Job.Parameters.Images.Directory = '~/Desktop/jhu_buyoant_turbulence/raw';
-Job.Parameters.Images.BaseName = 'jhu_buoy_turb_';
+Job.Parameters.Images.Directory = '/Users/matthewgiarra/Desktop/test_images/raw';
+Job.Parameters.Images.BaseName = 'Img_';
 Job.Parameters.Images.Extension = '.tif';
-Job.Parameters.Images.NumberOfDigits = 2;
+Job.Parameters.Images.NumberOfDigits = 3;
 
 % Output file parameters parameters
-Job.Parameters.Vectors.Directory = '~/Desktop/jhu_buyoant_turbulence/vect';
-Job.Parameters.Vectors.BaseName = 'frame_';
-Job.Parameters.Vectors.NumberOfDigits = 2;
+Job.Parameters.Vectors.Directory = '/Users/matthewgiarra/Desktop/test_images/vect';
+Job.Parameters.Vectors.BaseName = 'fmc_proc2_';
+Job.Parameters.Vectors.NumberOfDigits = 3;
 
 % Start and end images
-Job.Parameters.Images.Start = 5;
-Job.Parameters.Images.End = 5;
+Job.Parameters.Images.Start = 15;
+Job.Parameters.Images.End = 15;
 Job.Parameters.Images.FrameStep = 1;
 Job.Parameters.Images.CorrelationStep = 1;
 
 % Masking
 Job.Parameters.Mask.DoMasking = false;
-Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
+%Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
 
 % Number of passes for this job.
 % This will override the number
@@ -55,18 +55,18 @@ Job.JobOptions.NumberOfPasses = 1;
 Job.Parameters.Processing(1) = default_processing;
 
 % Correlation type to use
-Job.Parameters.Processing(1).Correlation.Method = 'rpc';
+Job.Parameters.Processing(1).Correlation.Method = 'fmc';
 
 % Grid and region parameters.
 % Region height and width refer to the un-windowed
 % interrogation region, i.e., double what Prana 
 % calls the "window resolution."
-Job.Parameters.Processing(1).InterrogationRegion.Height = 64;
-Job.Parameters.Processing(1).InterrogationRegion.Width = 64;
+Job.Parameters.Processing(1).InterrogationRegion.Height = 96;
+Job.Parameters.Processing(1).InterrogationRegion.Width = 96;
 
 % Grid spacing
-Job.Parameters.Processing(1).Grid.Spacing.X = 16;
-Job.Parameters.Processing(1).Grid.Spacing.Y = 16;
+Job.Parameters.Processing(1).Grid.Spacing.X = 24;
+Job.Parameters.Processing(1).Grid.Spacing.Y = 24;
 
 % Post processing
 Job.Parameters.Processing(1).Smoothing.DoSmoothing = false;
@@ -81,21 +81,21 @@ Job.Parameters.Processing(1).Iterative.MaxIterations = 1;
 Job.Parameters.Processing(2) = Job.Parameters.Processing(1);
 
 % Modify some parameters for the second pass.
-Job.Parameters.Processing(2).Grid.Spacing.X = 8;
-Job.Parameters.Processing(2).Grid.Spacing.Y = 8;
-Job.Parameters.Processing(2).InterrogationRegion.Height = 32;
-Job.Parameters.Processing(2).InterrogationRegion.Width  = 32;
+Job.Parameters.Processing(2).Grid.Spacing.X = 24;
+Job.Parameters.Processing(2).Grid.Spacing.Y = 24;
+Job.Parameters.Processing(2).InterrogationRegion.Height = 96;
+Job.Parameters.Processing(2).InterrogationRegion.Width  = 96;
 
 % Add the segment to job list
 JOBLIST(1) = Job;
 
-% Add a second job to the job list
-% Change the processing methods to FMC
-Job.Parameters.Processing(1).Correlation.Method = 'scc';
-Job.Parameters.Processing(2).Correlation.Method = 'scc';
-
-% Append the job to the job list.
-JOBLIST(end + 1) = Job;
+% % Add a second job to the job list
+% % Change the processing methods to FMC
+% Job.Parameters.Processing(1).Correlation.Method = 'fmc';
+% Job.Parameters.Processing(2).Correlation.Method = 'fmc';
+% 
+% % Append the job to the job list.
+% JOBLIST(end + 1) = Job;
 
 % This line runs the jobfile.
 % The option run_job_list is set
