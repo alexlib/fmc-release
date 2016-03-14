@@ -23,19 +23,19 @@ Job = DefaultJob;
 default_processing = Job.Parameters.Processing(1);
 
 % Input file parameters
-Job.Parameters.Images.Directory = '~/Desktop/jhu_buyoant_turbulence/raw';
+Job.Parameters.Images.Directory = '~/Documents/School/VT/Research/Aether/schlieren/analysis/data/jhu_buyoant_turbulence/raw';
 Job.Parameters.Images.BaseName = 'jhu_buoy_turb_';
 Job.Parameters.Images.Extension = '.tif';
 Job.Parameters.Images.NumberOfDigits = 2;
 
 % Output file parameters parameters
-Job.Parameters.Vectors.Directory = '~/Desktop/jhu_buyoant_turbulence/vect';
+Job.Parameters.Vectors.Directory = '~/Documents/School/VT/Research/Aether/schlieren/analysis/data/jhu_buyoant_turbulence/vect';
 Job.Parameters.Vectors.BaseName = 'frame_';
 Job.Parameters.Vectors.NumberOfDigits = 2;
 
 % Start and end images
-Job.Parameters.Images.Start = 5;
-Job.Parameters.Images.End = 5;
+Job.Parameters.Images.Start = 1;
+Job.Parameters.Images.End = 1;
 Job.Parameters.Images.FrameStep = 1;
 Job.Parameters.Images.CorrelationStep = 1;
 
@@ -55,47 +55,62 @@ Job.JobOptions.NumberOfPasses = 1;
 Job.Parameters.Processing(1) = default_processing;
 
 % Correlation type to use
-Job.Parameters.Processing(1).Correlation.Method = 'rpc';
+Job.Parameters.Processing(1).Correlation.Method = 'scc';
 
 % Grid and region parameters.
 % Region height and width refer to the un-windowed
 % interrogation region, i.e., double what Prana 
 % calls the "window resolution."
-Job.Parameters.Processing(1).InterrogationRegion.Height = 64;
-Job.Parameters.Processing(1).InterrogationRegion.Width = 64;
+Job.Parameters.Processing(1).InterrogationRegion.Height = 128;
+Job.Parameters.Processing(1).InterrogationRegion.Width = 128;
 
 % Grid spacing
 Job.Parameters.Processing(1).Grid.Spacing.X = 16;
 Job.Parameters.Processing(1).Grid.Spacing.Y = 16;
+Job.Parameters.Processing(1).Grid.Buffer.Y = [8, 8];
+Job.Parameters.Processing(1).Grid.Buffer.X = [8, 8];
 
 % Post processing
-Job.Parameters.Processing(1).Smoothing.DoSmoothing = false;
-Job.Parameters.Processing(1).Validation.DoValidation = false;
+Job.Parameters.Processing(1).Smoothing.DoSmoothing = true;
+Job.Parameters.Processing(1).Validation.DoValidation = true;
 
 % Iterative scheme
-Job.Parameters.Processing.Iterative.Method = 'none';
-Job.Parameters.Processing(1).Iterative.MaxIterations = 1;
+Job.Parameters.Processing(1).Iterative.Method = 'none';
+Job.Parameters.Processing(1).Iterative.MaxIterations = 3;
+
+% Attempt to converge the iterative method?
+Job.Parameters.Processing(1).Iterative.Converge = true;
 
 % % Make the second pass!
 % Copy the parameters from the first pass to a new pass.
 Job.Parameters.Processing(2) = Job.Parameters.Processing(1);
 
+% Iterative method options
+Job.Parameters.Processing(2).Iterative.MaxIterations = 6;
+Job.Parameters.Processing(2).Iterative.Converge = true;
+
 % Modify some parameters for the second pass.
 Job.Parameters.Processing(2).Grid.Spacing.X = 8;
 Job.Parameters.Processing(2).Grid.Spacing.Y = 8;
-Job.Parameters.Processing(2).InterrogationRegion.Height = 32;
-Job.Parameters.Processing(2).InterrogationRegion.Width  = 32;
+Job.Parameters.Processing(2).InterrogationRegion.Height = 64;
+Job.Parameters.Processing(2).InterrogationRegion.Width  = 64;
 
 % Add the segment to job list
 JOBLIST(1) = Job;
 
-% Add a second job to the job list
-% Change the processing methods to FMC
-Job.Parameters.Processing(1).Correlation.Method = 'scc';
-Job.Parameters.Processing(2).Correlation.Method = 'scc';
-
-% Append the job to the job list.
+% Correlation type to use
+Job.Parameters.Processing(1).Correlation.Method = 'rpc';
 JOBLIST(end + 1) = Job;
+
+% % Add a second job to the job list
+% % Change the processing methods to FMC
+% Job.Parameters.Processing(1).Correlation.Method = 'rpc';
+% Job.Parameters.Processing(2).Correlation.Method = 'rpc';
+% 
+% 
+% 
+% % Append the job to the job list.
+% JOBLIST(end + 1) = Job;
 
 % This line runs the jobfile.
 % The option run_job_list is set

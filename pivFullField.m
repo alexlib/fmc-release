@@ -326,7 +326,11 @@ while thisPass <= number_of_passes;
     % The p > 1 statement says to only deform the images
     % (i.e., don't try to smooth before any
     % velocities have been calculated).
-    if p > 1 && doImageDeformation        
+    if p > 1 && doImageDeformation
+        
+        % Start a timer to measure the number of 
+        % seconds spent on image deformation.
+        deform_tic = tic;
  
         % Create the pixel coordinates.
         [xi_integer, yi_integer] = meshgrid(1:imageWidth, 1:imageHeight);
@@ -356,12 +360,19 @@ while thisPass <= number_of_passes;
         XD2 = XI + UI/2;
         YD2 = YI + VI/2;
 
-        % Resample the images
+        % Deform (resample) the first image
         fprintf('Deforming image 1...\n')
         image1 = sincBlackmanInterp2(image1_raw, XD1 + 0.5, YD1 + 0.5, 8, 'blackman');
         
+        % Deform (resample) the first image
         fprintf('Deforming image 2...\n')
         image2 = sincBlackmanInterp2(image2_raw, XD2 + 0.5, YD2 + 0.5, 8, 'blackman');
+        
+        % End the deform timer.
+        deform_toc = toc(deform_tic);
+        
+        % Display the number of seconds spent on image deformation.
+        fprintf(1, 'Deform time: %0.2f seconds.\n', deform_toc);
         
     else
         % If not deform or if we're on the first pass, use the raw images.
@@ -509,7 +520,7 @@ while thisPass <= number_of_passes;
     end % end for k = 1 : nRegions
         
     % Inform the user
-    fprintf('Correlation time: %0.2f seconds.\n', p, toc(t));
+    fprintf('Correlation time: %0.2f seconds.\n', toc(t));
     
     % Reshape the raw measured displacements into matrices.
     tx_raw = reshape(estimatedTranslationX, numRows, numColumns);
@@ -671,9 +682,9 @@ while thisPass <= number_of_passes;
             
             % Inform the user
             fprintf(...
-                'Pass %d has not converged after %d iterations of %s.\n', ...
+                'Pass %d has not converged after %d iterations of %s.\n\n', ...
                 thisPass, num_iterations, iterative_method);
-            fprintf(1, 'Iterating %s...\n\n', iterative_method);
+            fprintf(1, 'Iterating %s...\n', iterative_method);
 
             % Increment the iteration counter
             num_iterations = num_iterations + 1; 
