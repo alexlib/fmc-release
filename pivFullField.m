@@ -156,7 +156,7 @@ while thisPass <= number_of_passes;
     spectrum_width  = fftSize(2);
     
     %% These things are specific to FMC, but run for all methods
-    % because of some issues with the parfor loop (I think).
+    % because of some issues with the for loop (I think).
     
     % Window sizes and types for FMC; this is specific to FMC.
     fmiWindowSize = ...
@@ -502,7 +502,8 @@ while thisPass <= number_of_passes;
                     = RPC(...
                     spatialWindow .* subRegion1, ...
                     spatialWindow .* subRegion2,...
-                    imageSpectralFilter, subpixel_peak_fit_method_numerical); 
+                    imageSpectralFilter, ...
+                    subpixel_peak_fit_method_numerical, COMPILED); 
 
                 % Measure the peak height ratio
                 spatialPeakRatio(k) = measurePeakHeightRatio(rpcPlane, COMPILED);
@@ -513,7 +514,7 @@ while thisPass <= number_of_passes;
                     = SCC(...
                     spatialWindow .* subRegion1, ...
                     spatialWindow .* subRegion2,...
-                    subpixel_peak_fit_method_numerical);
+                    subpixel_peak_fit_method_numerical, COMPILED);
             end
         end
         

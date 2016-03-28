@@ -136,7 +136,10 @@ ty = zeros(nPeaks, 1);
 % % Loop over the peak number (p) 
 for p = 1 : nPeaks;     
     [angleOut(p), tx(p), ty(p), peakHeight(p), peakRatio(p), peakDiameter(p)] = ...
-    testAffineParameters(double(IMAGE_01), double(IMAGE_02), double(SPATIAL_WINDOW), double(SPECTRAL_FILTER), ANGLE_IN(p), SCALING_IN(p), X_IMAGE, Y_IMAGE, DIFFERENCE_METHOD, COMPILED);
+    testAffineParameters(double(IMAGE_01), ...
+    double(IMAGE_02), double(SPATIAL_WINDOW), ...
+    double(SPECTRAL_FILTER), ANGLE_IN(p), ...
+    SCALING_IN(p), X_IMAGE, Y_IMAGE, DIFFERENCE_METHOD, COMPILED);
 end
 
 % Determine which of the rotations/scalings corresponding to the n FMC 
@@ -155,27 +158,36 @@ RPC_PEAK_DIAMETER = peakDiameter(PEAKUSED);
 end
 
 
-function [angleOut, tx, ty, peakHeight, peakRatio, peakDiameter] = testAffineParameters(image1, image2, spatialWindow, spectralFilter, angleIn, scalingIn, xImage, yImage, differenceMethod, COMPILED)
+function [angleOut, tx, ty, peakHeight, peakRatio, peakDiameter] = ...
+    testAffineParameters(image1, image2, ...
+    spatialWindow, spectralFilter, angleIn, ...
+    scalingIn, xImage, yImage, differenceMethod, COMPILED)
 
 % Invert the rotation angle
 th = -angleIn;
 
 % Similarity matrices
-[matrix_11, matrix_21] = makeSimilarityMatrices(th, scalingIn, differenceMethod);
+[matrix_11, matrix_21] = makeSimilarityMatrices(th, scalingIn, ...
+    differenceMethod);
 
 % These lines transform the images. The transform function is written so
 % that if an identity matrix is input, it quickly outputs the original
 % image, so it shouldn't be inefficient to do this outside the "if"
 % statements.
 % This transforms the first image.
-imageTest_1 = transformImage(image1, xImage, yImage, matrix_11, COMPILED);
+imageTest_1 = transformImage(image1, xImage, yImage, ...
+    matrix_11, COMPILED);
 
 % This transforms the second image.
-imageTest_2 = transformImage(image2, xImage, yImage, matrix_21, COMPILED);
+imageTest_2 = transformImage(image2, xImage, yImage, ...
+    matrix_21, COMPILED);
 
 % This is does the RPC correlation between the aligned first and second
 % images that were aligned using the originally-calculated rotation angle.
-[ty1, tx1, spatialCorr, peakHeight1, peakDiameter1] = RPC(spatialWindow .* imageTest_1, spatialWindow .* imageTest_2, spectralFilter, COMPILED);
+[ty1, tx1, spatialCorr, peakHeight1, peakDiameter1] = ...
+    RPC(spatialWindow .* imageTest_1, ...
+        spatialWindow .* imageTest_2, ...
+        spectralFilter, 1, COMPILED);
 
 % This calculates the peak ratio and peak height for the correlation
 % between the "central difference" correlation for the
@@ -202,7 +214,9 @@ imageTest_2 = transformImage(image2, xImage, yImage, matrix_22, COMPILED);
 % This is does the RPC correlation between the forward-transformed first
 % image and the backward-transformed second image, for the originally
 % calculated rotation angle + pi.
-[ty2, tx2, spatialCorr, peakHeight2, peakDiameter2] = RPC(spatialWindow .* imageTest_1, spatialWindow .* imageTest_2, spectralFilter, COMPILED);
+[ty2, tx2, spatialCorr, peakHeight2, peakDiameter2] = ...
+    RPC(spatialWindow .* imageTest_1, ...
+    spatialWindow .* imageTest_2, spectralFilter, 1, COMPILED);
 
 % This calculates the peak ratio and peak height for the correlation
 % between the "central difference" correlation for the

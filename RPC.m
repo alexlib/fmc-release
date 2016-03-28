@@ -1,6 +1,6 @@
 function [TRANSLATION_Y, TRANSLATION_X, SPATIAL_RPC_PLANE, ...
     CORR_HEIGHT, CORR_DIAMETER] = ...
-    RPC(IMAGE1, IMAGE2, CORR_SPECTRALFILTER, PEAK_FIT_METHOD)
+    RPC(IMAGE1, IMAGE2, CORR_SPECTRALFILTER, PEAK_FIT_METHOD, COMPILED)
 % [TRANSLATION_Y, TRANSLATION_X, SPATIAL_RPC_PLANE, CORR_HEIGHT, CORR_DIAMETER] = RPC(IMAGE1, IMAGE2, CORR_SPECTRALFILTER)
 %   calculates the robust phase correlation between two images
 %
@@ -22,17 +22,25 @@ function [TRANSLATION_Y, TRANSLATION_X, SPATIAL_RPC_PLANE, ...
 %       See the function subpixel.m for details on this calculation.
 %
 
+% Default to not running compiled codes.
+if nargin < 5
+    COMPILED = false;
+end
+
 % Calculate size of interrogation regions (homogeneous) (pixels)
 [height, width] = size(IMAGE1);
 
 % Calculate the RPC plane between the two images.
 % This line is all done at once to increase speed by not writing variables at intermediate steps. 
-SPATIAL_RPC_PLANE = freq2space(fftshift(phaseOnlyFilter(fftn(double(IMAGE2), [height, width]) .* conj(fftn(double(IMAGE1), [height, width])))) .* double(CORR_SPECTRALFILTER));
+SPATIAL_RPC_PLANE = freq2space(fftshift...
+    (phaseOnlyFilter(fftn(double(IMAGE2), ...
+    [height, width]) .* conj(fftn(double(IMAGE1), ...
+    [height, width])))) .* double(CORR_SPECTRALFILTER));
 
 % Prana subplixel implmentation of the sub-pixel fit
 [TRANSLATION_Y, TRANSLATION_X, CORR_HEIGHT, CORR_DIAMETER] = ...
     subpixel(SPATIAL_RPC_PLANE, ...
-    ones(size(SPATIAL_RPC_PLANE)), PEAK_FIT_METHOD, 0, 1);
+    ones(size(SPATIAL_RPC_PLANE)), PEAK_FIT_METHOD, 0, COMPILED);
 
 end
 

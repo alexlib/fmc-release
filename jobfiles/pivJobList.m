@@ -23,25 +23,25 @@ Job = DefaultJob;
 default_processing = Job.Parameters.Processing(1);
 
 % Input file parameters
-Job.Parameters.Images.Directory = '~/Documents/School/VT/Research/Aether/schlieren/analysis/data/jhu_buyoant_turbulence/raw';
-Job.Parameters.Images.BaseName = 'jhu_buoy_turb_';
-Job.Parameters.Images.Extension = '.tif';
-Job.Parameters.Images.NumberOfDigits = 2;
+Job.Parameters.Images.Directory = '~/Desktop/vortex_images/raw';
+Job.Parameters.Images.BaseName = 'lambvortex_h1024_w1024_';
+Job.Parameters.Images.Extension = '.tiff';
+Job.Parameters.Images.NumberOfDigits = 6;
 
 % Output file parameters parameters
-Job.Parameters.Vectors.Directory = '~/Documents/School/VT/Research/Aether/schlieren/analysis/data/jhu_buyoant_turbulence/vect';
-Job.Parameters.Vectors.BaseName = 'frame_';
-Job.Parameters.Vectors.NumberOfDigits = 2;
+Job.Parameters.Vectors.Directory = '~/Desktop/vortex_images/vect';
+Job.Parameters.Vectors.BaseName = 'lambvortex_h1024_w1024_';
+Job.Parameters.Vectors.NumberOfDigits = 6;
 
 % Start and end images
 Job.Parameters.Images.Start = 1;
 Job.Parameters.Images.End = 1;
 Job.Parameters.Images.FrameStep = 1;
-Job.Parameters.Images.CorrelationStep = 1;
+Job.Parameters.Images.CorrelationStep = 3;
 
 % Masking
 Job.Parameters.Mask.DoMasking = false;
-Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
+%Job.Parameters.Mask.Path = '~/Desktop/mask.tif';
 
 % Number of passes for this job.
 % This will override the number
@@ -97,20 +97,6 @@ Job.Parameters.Processing(2).InterrogationRegion.Width  = 64;
 
 % Add the segment to job list
 JOBLIST(1) = Job;
-
-% Correlation type to use
-Job.Parameters.Processing(1).Correlation.Method = 'rpc';
-JOBLIST(end + 1) = Job;
-
-% % Add a second job to the job list
-% % Change the processing methods to FMC
-% Job.Parameters.Processing(1).Correlation.Method = 'rpc';
-% Job.Parameters.Processing(2).Correlation.Method = 'rpc';
-% 
-% 
-% 
-% % Append the job to the job list.
-% JOBLIST(end + 1) = Job;
 
 % This line runs the jobfile.
 % The option run_job_list is set
